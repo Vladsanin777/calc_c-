@@ -2,6 +2,8 @@
 #include <gtk/gtk.h>
 #include <string>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 // Функция для вычисления результата выражения
 double calculate(const std::string &expression) {
@@ -75,6 +77,11 @@ int main(int argc, char *argv[]) {
     gtk_container_set_border_width(GTK_CONTAINER(window), 10);
     gtk_widget_set_size_request(window, 200, 200);
 
+    // Устанавливаем CSS для фона окна
+    GtkCssProvider *cssProvider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(cssProvider, "window {background: linear-gradient(to bottom, #ff0000, #0000ff);}", -1, NULL);
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
     // Создаем Grid для размещения виджетов
     GtkWidget *grid = gtk_grid_new();
     gtk_container_add(GTK_CONTAINER(window), grid);
@@ -113,3 +120,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
