@@ -67,6 +67,13 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
     gtk_entry_set_text(GTK_ENTRY(entry), entry_string.c_str());
 }
 
+// Функция для создания кастомных кнопок с прозрачным фоном
+GtkWidget *create_custom_button(const gchar *label) {
+    GtkWidget *button = gtk_button_new_with_label(label);
+    gtk_widget_set_opacity(button, 0.7); // Устанавливаем прозрачность кнопки
+    return button;
+}
+
 int main(int argc, char *argv[]) {
     // Инициализация GTK
     gtk_init(&argc, &argv);
@@ -77,11 +84,10 @@ int main(int argc, char *argv[]) {
     gtk_container_set_border_width(GTK_CONTAINER(window), 10);
     gtk_widget_set_size_request(window, 200, 200);
 
-    // Устанавливаем CSS для фона окна с измененным направлением градиента
+    // Устанавливаем CSS для фона окна
     GtkCssProvider *cssProvider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(cssProvider, "window {background: linear-gradient(to bottom right, #ff0000, #0000ff);}", -1, NULL);
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-
 
     // Создаем Grid для размещения виджетов
     GtkWidget *grid = gtk_grid_new();
@@ -105,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     // Создаем кнопки и присоединяем к ним функцию button_clicked
     for (int i = 0; i < 19; ++i) {
-        GtkWidget *button = gtk_button_new_with_label(button_labels[i]);
+        GtkWidget *button = create_custom_button(button_labels[i]);
         g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), entry);
         gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
     }
