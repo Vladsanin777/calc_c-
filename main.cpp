@@ -4,17 +4,149 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <stack>
 
-// Функция для вычисления результата выражения
-double calculate(const std::string &expression) {
-    // Простейший калькулятор, который просто выполняет вычисление строки
-    try {
-        return std::stod(expression);
-    } catch (const std::exception &e) {
-        std::cerr << "Ошибка: " << e.what() << std::endl;
-        return 0.0; // Возвращаем 0 в случае ошибки
+
+
+using namespace std;
+
+bool if_coma(const std::string& expression){
+    for (char i : expression){
+        if (i == ','){
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string expression_trimming(const std::string& expression) {
+    std::string trimmed_expression = expression; // Создаем копию строки
+    if (if_coma(trimmed_expression)) {
+        for (int i = trimmed_expression.length() - 1; i >= 0; --i) {
+            if (trimmed_expression[i] == '0' or trimmed_expression[i] == ',') {
+                trimmed_expression.pop_back();
+            } else {
+                break;
+            }
+        }
+        return trimmed_expression;
+    }
+    return trimmed_expression;
+}
+
+
+
+
+// Функция для проверки, является ли символ оператором
+bool isOperator(char c) {
+    return c == '+' || c == '-' || c == '*' || c == '/';
+}
+
+// Функция для определения приоритета оператора
+int precedence(char op) {
+    if (op == '+' || op == '-')
+        return 1;
+    if (op == '*' || op == '/')
+        return 2;
+    return 0;
+}
+
+// Функция для выполнения операции между двумя операндами
+double applyOperation(double a, double b, char op) {
+    switch (op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return a / b;
+        default: return 0;
     }
 }
+
+// Функция для вычисления значения арифметического выражения в постфиксной форме
+std::string calculate(const string& expression) {
+    stack<double> values;
+    stack<char> operators;
+
+    for (int i = 0; i < expression.size(); ++i) {
+        char c = expression[i];
+        // Пропускаем пробелы
+        if (c == ' ')
+            continue;
+
+        // Если символ - цифра, то помещаем его в стек значений
+        if (isdigit(c)) {
+            double num = 0;
+            while (i < expression.size() && (isdigit(expression[i]) || expression[i] == '.')) {
+                if (expression[i] == '.') {
+                    double fractionalPart = 0;
+                    double divisor = 10;
+                    ++i;
+                    while (i < expression.size() && isdigit(expression[i])) {
+                        fractionalPart += (expression[i] - '0') / divisor;
+                        divisor *= 10;
+                        ++i;
+                    }
+                    num += fractionalPart;
+                } else {
+                    num = num * 10 + (expression[i] - '0');
+                    ++i;
+                }
+            }
+            values.push(num);
+            --i;
+        }
+        // Если символ - открывающая скобка, помещаем его в стек операторов
+        else if (c == '(') {
+            operators.push(c);
+        }
+        // Если символ - закрывающая скобка, выполняем операции до тех пор,
+        // пока не встретим открывающую скобку
+        else if (c == ')') {
+            while (!operators.empty() && operators.top() != '(') {
+                double b = values.top();
+                values.pop();
+                double a = values.top();
+                values.pop();
+                char op = operators.top();
+                operators.pop();
+                values.push(applyOperation(a, b, op));
+            }
+            operators.pop(); // Удаляем открывающую скобку из стека
+        }
+        // Если символ - оператор
+        else if (isOperator(c)) {
+            // Выполняем операции с более высоким или равным приоритетом
+            // до тех пор, пока в стеке есть операторы с более высоким приоритетом
+            while (!operators.empty() && precedence(operators.top()) >= precedence(c)) {
+                double b = values.top();
+                values.pop();
+                double a = values.top();
+                values.pop();
+                char op = operators.top();
+                operators.pop();
+                values.push(applyOperation(a, b, op));
+            }
+            operators.push(c);
+        }
+    }
+
+    // Выполняем оставшиеся операции в стеках
+    while (!operators.empty()) {
+        double b = values.top();
+        values.pop();
+        double a = values.top();
+        values.pop();
+        char op = operators.top();
+        operators.pop();
+        values.push(applyOperation(a, b, op));
+    }
+
+    // Возвращаем результат
+    return expression_trimming(std::to_string(values.top()));
+}
+
+
+
 
 // Функция для вычисления факториала числа
 unsigned long long factorial(int n) {
@@ -40,9 +172,9 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
     // Проверяем, была ли нажата кнопка "="
     if (std::string(text) == "=") {
         // Вычисляем результат выражения
-        double result = calculate(entry_string);
+        std::string result = calculate(entry_string);
         // Преобразуем результат обратно в строку
-        entry_string = std::to_string(result);
+        entry_string = result;
     } else if (std::string(text) == "C") {
         // Стираем один символ, если нажата кнопка "C"
         if (!entry_string.empty())
@@ -127,4 +259,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
