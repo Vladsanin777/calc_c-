@@ -158,6 +158,7 @@ unsigned long long factorial(int n) {
     return result;
 }
 
+
 // Функция, вызываемая при нажатии кнопок
 static void button_clicked(GtkWidget *widget, gpointer data) {
     // Получаем текст с кнопки
@@ -190,6 +191,51 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
         } catch (...) {
             entry_string = "Ошибка";
         }
+    } else if (std::string(text) == "%") {
+        int last_operator;
+        for (int i = entry_string.length() - 1; i != 0; --i){
+            if (isOperator(entry_string[i])){
+                last_operator = i;
+                break;
+            }
+        }
+        std::string begin_str = entry_string.substr(0, last_operator);
+        double end_double = std::stod(entry_string.substr(last_operator + 1));
+        char operat = entry_string[last_operator];
+        std::cout<<begin_str<<end_double<<operat;
+        std::string percent;
+        int number_of_open_parentheses = 1;
+        int start_expression = 0;
+        switch (operat) {
+            case '+':
+            case '-':
+
+                for (int i = begin_str.length() - 1; i >= 0; --i){
+                    switch (begin_str[i]){
+                        case '(':
+                            number_of_open_parentheses -= 1;
+                            break;
+                        case ')':
+                            number_of_open_parentheses += 1;
+                            break;
+                    }
+                    if (number_of_open_parentheses == 0){
+                        start_expression = i;
+                        break;
+                    }
+                }
+                std::cout<<std::endl<<start_expression<<std::endl;
+                std::cout<<begin_str.substr(start_expression);
+                percent = expression_trimming(std::to_string(std::stod(calculate(begin_str.substr(start_expression))) / 100 * end_double));
+                break;
+            case '*':
+            case '/':
+                double r = end_double / 100;
+                percent = expression_trimming(std::to_string(r));
+                break;
+        }
+        entry_string = begin_str + operat + percent;
+
     } else {
         // Добавляем текст с кнопки к текущему тексту
         entry_string += text;
@@ -234,15 +280,16 @@ int main(int argc, char *argv[]) {
 
     // Массив с названиями кнопок калькулятора
     const gchar *button_labels[] = {
+        "(", ")", "!", "%",
         "7", "8", "9", "/",
         "4", "5", "6", "*",
         "1", "2", "3", "-",
         "0", ".", "=", "+",
-        "C", "CE", "!"
+        "C", "CE", "00", "000"
     };
 
     // Создаем кнопки и присоединяем к ним функцию button_clicked
-    for (int i = 0; i < 19; ++i) {
+    for (int i = 0; i < 24; ++i) {
         GtkWidget *button = create_custom_button(button_labels[i]);
         g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), entry);
         gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
