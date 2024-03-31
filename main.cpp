@@ -220,12 +220,12 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
                             break;
                     }
                     if (number_of_open_parentheses == 0){
-                        start_expression = i;
+                        start_expression = i + 1;
                         break;
                     }
                 }
                 std::cout<<std::endl<<start_expression<<std::endl;
-                std::cout<<begin_str.substr(start_expression);
+                std::cout<<begin_str.substr(start_expression)<<std::endl;
                 percent = expression_trimming(std::to_string(std::stod(calculate(begin_str.substr(start_expression))) / 100 * end_double));
                 break;
             case '*':
