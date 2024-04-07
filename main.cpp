@@ -275,35 +275,29 @@ private:
     }
 
     double calc_1 (const std::string& expression, int number_of_brackets){
+        //Номера открывающихся скобок
+        std::vector <int> open_brackets_numbers;
+        //Номера закрывающихся скобок
+        std::vector <int> close_brackets_numbers;
         //Максимальный уровень скобки
         int max_level_brackets = 0;
         int level_brackets = 0;
-        for (char e : expression){
-            e == '(' ? level_brackets++;
-            e == ')' ? level_brackets--;
+        for (int i = 0; i != size(expression); i++){
+            char e = expression[i]
+            if (e == '('){
+                level_brackets++;
+                open_brackets_numbers.push_back(i);
+            } else if (e == ')'){
+                level_brackets--;
+                close_brackets_numbers.push_back(i);
+            }
             max_level_brackets < level_brackets ? max_level_brackets = level_brackets;
         }
-        for (number_of_brackets != 0; number_of_brackets--){
-            //Последняя открывающая скобка
-            int start_int_bracket = 0;
-            int count_open_brackets = 0;
-            for (int i = 0; i != size(expression); i++){
-                if (expression[i] == '('){
-                    start_int_bracket = i;
-                    count_open_brackets++;
-                    count_open_brackets == level_brackets ? break;
-                }
-            }
-            //Первая закрывающая скобка
-            int finish_int_bracket = 0;
-            count_open_brackets = 0;
-            for (int i = size(expression); i != 0; i--){
-                if (expression[i] == ')'){
-                    finish_int_bracket = i;
-                    count_open_brackets++;
-                    count_open_brackets == level_brackets ? break;
-                }
-            }
+        std::vector <std::vector <int>> open_and_close_brackets_numbers;
+        for (int i = size(open_brackets_numbers); i != 0; i--){
+            for ()
+            open_brackets_numbers[i]
+            open_and_close_brackets_numbers.push_back(std::vector <int> {open_brackets_numbers[i],/*Незабудь вернуться !!!*/})
         }
     }
 
