@@ -251,6 +251,25 @@ double evaluateExpression(const string& expr) {
 }
 */
 
+void pprint_1(std::vector<int> nestedVector ){
+    // Выводим вложенный вектор в консоль
+    std::cout << "Nested Vector:_2" << std::endl;
+    for (int i  : nestedVector) {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+}
+
+void pprint(std::vector <std::vector<int>> nestedVector ){
+    // Выводим вложенный вектор в консоль
+    std::cout << "Nested Vector:" << std::endl;
+    for (const auto& innerVector : nestedVector) {
+        for (int element : innerVector) {
+            std::cout << element << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
 class calculate{
 private:
@@ -283,7 +302,7 @@ private:
         int max_level_brackets = 0;
         int level_brackets = 0;
         for (int i = 0; i != size(expression); i++){
-            char e = expression[i]
+            char e = expression[i];
             if (e == '('){
                 level_brackets++;
                 open_brackets_numbers.push_back(i);
@@ -291,21 +310,33 @@ private:
                 level_brackets--;
                 close_brackets_numbers.push_back(i);
             }
-            max_level_brackets < level_brackets ? max_level_brackets = level_brackets;
+            max_level_brackets = max_level_brackets > level_brackets ? max_level_brackets : level_brackets;
         }
+        pprint_1(open_brackets_numbers);
+        pprint_1(close_brackets_numbers);
         std::vector <std::vector <int>> open_and_close_brackets_numbers;
-        for (int i = size(open_brackets_numbers); i != 0; i--){
-            for ()
-            open_brackets_numbers[i]
-            open_and_close_brackets_numbers.push_back(std::vector <int> {open_brackets_numbers[i],/*Незабудь вернуться !!!*/})
+        for (int open_bracket = size(open_brackets_numbers) - 1; open_bracket != -1; open_bracket--){
+            int close_bracket;
+            for (int t = 0; t != size(close_brackets_numbers); t++){
+                std::cout<<t<<std::endl;
+                if (open_brackets_numbers[open_bracket] < close_brackets_numbers[t]){
+                    close_bracket = t;
+                    break;
+                }
+            }
+            close_brackets_numbers.erase(close_brackets_numbers.begin() + close_bracket);
+            open_and_close_brackets_numbers.push_back(std::vector <int> {open_brackets_numbers[open_bracket], close_brackets_numbers[close_bracket]});
         }
+        pprint(open_and_close_brackets_numbers);
+        std::cout<<"l"<<std::endl;
+        return 1.0;
     }
 
 
 public:
     //Основной метод калькулятора
     std::string calc(const std::string& expression){
-        std::vector<int> counting_parentheses = this->counting_parentheses(expression)
+        std::vector<int> counting_parentheses = this->counting_parentheses(expression);
         if (!this->equality_of_two_numbers(counting_parentheses)) return "Ошибка";
         return std::to_string(this->calc_1(expression, counting_parentheses[0]));
     }
@@ -347,6 +378,7 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
     if (std::string(text) == "=") {
         calculate cal;
         std::string result = cal.calc(entry_string);
+        std::cout<<"kl"<<endl;
         // Преобразуем результат обратно в строку
         entry_string = result;
     } else if (std::string(text) == "C") {
