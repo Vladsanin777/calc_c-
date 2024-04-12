@@ -251,9 +251,18 @@ double evaluateExpression(const string& expr) {
 }
 */
 
-void pprint_1(std::vector<int> nestedVector ){
+void pprint_2(std::vector<std::string> nestedVector ){
     // Выводим вложенный вектор в консоль
     std::cout << "Nested Vector:_2" << std::endl;
+    for (std::string i  : nestedVector) {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+}
+
+void pprint_1(std::vector<int> nestedVector ){
+    // Выводим вложенный вектор в консоль
+    std::cout << "Nested Vector:_1" << std::endl;
     for (int i  : nestedVector) {
         std::cout << i << " ";
     }
@@ -324,24 +333,28 @@ private:
                 break;
             }
         }
-        return std::vector <int> {open_brackets_numbers[open_bracket], close_brackets_numbers[close_bracket]});
+        return std::vector <int> {open_brackets_numbers[open_bracket], close_brackets_numbers[close_bracket]};
     }
     bool calc_3(std::string expression_2){
         for (int i = 1; i != size(expression_2); i++){
-            if (expression_2[i] == "+" || expression_2 == "-" || expression_2 == "*" || expression == "/"){
+            if (expression_2[i] == '+' || expression_2[i] == '-' || expression_2[i] == '*' || expression_2[i] == '/') {
                 return true;
             }
         }
+        return false;
     }
 
     // Функция для разбиения строки на отдельные элементы (числа и операторы)
-    std::vector<string> tokenize(const string &expression) {
+    std::vector<string> tokenize(const std::string &expression) {
         std::vector<string> tokens;
         std::string token;
-        for (size_t i = 0; i < expression.size(); ++i) {
-            if (isdigit(expression[i]) || expression[i] == '-') { // Если текущий символ - цифра или минус (для отрицательных чисел)
+        int minus = 0;
+        for (int i = 0; i < expression.size(); i++) {
+            if ((isdigit(expression[i]) || expression[i] == '-' || expression[i] == ',') && !(minus < 1 && expression[i] == '-')) { // Если текущий символ - цифра или минус (для отрицательных чисел)
+                if (expression[i] == '-') minus++;
                 token += expression[i];
             } else {
+                minus = 0;
                 if (!token.empty()) {
                     tokens.push_back(token);
                     token.clear();
@@ -355,7 +368,8 @@ private:
         return tokens;
     }
 
-    std::string calculate(std::vector<string> tokens) {
+    std::string calculate_1(std::vector<string> tokens) {
+        pprint_2(tokens);
         double result = stod(tokens[0]); // Первый токен всегда число
         char last_operator = '+'; // Начинаем с оператора сложения
 
@@ -382,30 +396,29 @@ private:
                         if (num != 0) {
                             result /= num;
                         } else {
-                            cerr << "Ошибка: деление на ноль!" << endl;
                             return "Деление на ноль";
                         }
                         break;
                 }
             }
         }
-        return to_string(result);
+        return std::to_string(result);
     }
 
     // Метод для подсчёта простых выражений
     std::string calc_2 (std::vector <int> priority_brackets, std::string expression_1){
         std::string expression_2 = expression_1.substr(priority_brackets[0], priority_brackets[1]);
-        return this->calculate(this->tokenize(expression_2));
+        return this->calculate_1(this->tokenize(expression_2));
     }
 public:
     //Основной метод калькулятора
     std::string calc(std::string expression_1){
-        std::vector<int> counting_parentheses = this->counting_parentheses(expression);
-        if (!this->equality_of_two_numbers(counting_parentheses)) return "Ошибка";
-        for (counting_parentheses(expression_1)[0] != 0){
-            expression_1 = this->calc_2(this->searching_for_priority_brackets(expression_1, counting_parentheses[0]), expression_1));
+        std::vector<int> counting_parentheses_1 = this->counting_parentheses(expression_1);
+        if (!this->equality_of_two_numbers(counting_parentheses_1)) return "Ошибка";
+        for (int i; this->counting_parentheses(expression_1)[0] != 0; i--){
+            expression_1 = this->calc_2(this->searching_for_priority_brackets(expression_1, counting_parentheses_1[0]), expression_1);
         }
-        return this->calculate(this->tokenize(expression_1));
+        return this->calculate_1(this->tokenize(expression_1));
     }
 };
 
@@ -446,7 +459,6 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
         calculate cal;
         std::string result = cal.calc(entry_string);
         std::cout<<"kl"<<endl;
-        // Преобразуем результат обратно в строку
         entry_string = result;
     } else if (std::string(text) == "C") {
         // Стираем один символ, если нажата кнопка "C"
