@@ -301,40 +301,25 @@ private:
     bool equality_of_two_numbers (std::vector<int> counting_parentheses){
         return counting_parentheses[0] == counting_parentheses[1];
     }
+
     // Метод для поиска приоритетных скобок
     std::vector <int> searching_for_priority_brackets (const std::string& expression, int number_of_brackets){
-        //Номера открывающихся скобок
-        std::vector <int> open_brackets_numbers;
-        //Номера закрывающихся скобок
-        std::vector <int> close_brackets_numbers;
-        //Максимальный уровень скобки
-        int max_level_brackets = 0;
-        int level_brackets = 0;
-        for (int i = 0; i != size(expression); i++){
-            char e = expression[i];
-            if (e == '('){
-                level_brackets++;
-                open_brackets_numbers.push_back(i);
-            } else if (e == ')'){
-                level_brackets--;
-                close_brackets_numbers.push_back(i);
-            }
-            max_level_brackets = max_level_brackets > level_brackets ? max_level_brackets : level_brackets;
-        }
-        pprint_1(open_brackets_numbers);
-        pprint_1(close_brackets_numbers);
-        std::vector <std::vector <int>> open_and_close_brackets_numbers;
-        int open_bracket = size(open_brackets_numbers) - 1;
-        int close_bracket;
-        for (int t = 0; t != size(close_brackets_numbers); t++){
-            std::cout<<t<<std::endl;
-            if (open_brackets_numbers[open_bracket] < close_brackets_numbers[t]){
-                close_bracket = t;
-                break;
+        int number_last_open_brackets;
+        for (int i = 0; number_of_brackets != 0; i++){
+            if (expression[i] == '('){
+                number_last_open_brackets = i;
+                number_of_brackets--;
             }
         }
-        return std::vector <int> {open_brackets_numbers[open_bracket], close_brackets_numbers[close_bracket]};
+        int number_priority_close_brackets = 0;
+        for (int i = 0; number_last_open_brackets < number_priority_close_brackets; i++){
+            if (expression[i] == ')'){
+                number_priority_close_brackets = i;
+            }
+        }
+        return {number_last_open_brackets, number_priority_close_brackets};
     }
+
     bool calc_3(std::string expression_2){
         for (int i = 1; i != size(expression_2); i++){
             if (expression_2[i] == '+' || expression_2[i] == '-' || expression_2[i] == '*' || expression_2[i] == '/') {
@@ -350,8 +335,8 @@ private:
         std::string token;
         int minus = 0;
         for (int i = 0; i < expression.size(); i++) {
-            if ((isdigit(expression[i]) || expression[i] == '-' || expression[i] == ',') && !(minus < 1 && expression[i] == '-')) { // Если текущий символ - цифра или минус (для отрицательных чисел)
-                if (expression[i] == '-') minus++;
+            if ((isdigit(expression[i]) || expression[i] == ',') || (minus == 0 && expression[i] == '-')) { // Если текущий символ - цифра или минус (для отрицательных чисел)
+                minus++;
                 token += expression[i];
             } else {
                 minus = 0;
@@ -407,17 +392,21 @@ private:
 
     // Метод для подсчёта простых выражений
     std::string calc_2 (std::vector <int> priority_brackets, std::string expression_1){
-        std::string expression_2 = expression_1.substr(priority_brackets[0], priority_brackets[1]);
-        return this->calculate_1(this->tokenize(expression_2));
+        std::string bracket = this->calculate_1(this->tokenize(expression_1.substr(priority_brackets[0], priority_brackets[1])));
+        //return expression_1.substr(0, priority_brackets[0]) + bracket + expression_1.substr(priority_brackets[1]);
+        return bracket;
+
+
     }
 public:
     //Основной метод калькулятора
     std::string calc(std::string expression_1){
-        std::vector<int> counting_parentheses_1 = this->counting_parentheses(expression_1);
-        if (!this->equality_of_two_numbers(counting_parentheses_1)) return "Ошибка";
-        for (int i; this->counting_parentheses(expression_1)[0] != 0; i--){
-            expression_1 = this->calc_2(this->searching_for_priority_brackets(expression_1, counting_parentheses_1[0]), expression_1);
+        if (!this->equality_of_two_numbers(this->counting_parentheses(expression_1))) return "Неравное количество скобок!";
+        while (this->counting_parentheses(expression_1)[0] != 0){
+            std::cout<<"Со скобками"<<std::endl;
+            expression_1 = this->calc_2(this->searching_for_priority_brackets(expression_1, this->counting_parentheses(expression_1)[0]), expression_1);
         }
+        std::cout<<"Без скобок"<<std::endl;
         return this->calculate_1(this->tokenize(expression_1));
     }
 };
