@@ -295,15 +295,17 @@ private:
                     break;
             }
         }
+        std::cout<<"counting_parentheses"<<std::endl;
         return std::vector<int>{bracket_1, bracket_2};
     }
     //Равность двух чисел
     bool equality_of_two_numbers (std::vector<int> counting_parentheses){
+        std::cout<<"equality_of_two_numbers"<<std::endl;
         return counting_parentheses[0] == counting_parentheses[1];
     }
 
     // Метод для поиска приоритетных скобок
-    std::vector <int> searching_for_priority_brackets (const std::string& expression, int number_of_brackets){
+    std::vector <int> searching_for_priority_brackets (const std::string expression, int number_of_brackets){
         int number_last_open_brackets;
         for (int i = 0; number_of_brackets != 0; i++){
             if (expression[i] == '('){
@@ -312,25 +314,32 @@ private:
             }
         }
         int number_priority_close_brackets = 0;
-        for (int i = 0; number_last_open_brackets < number_priority_close_brackets; i++){
+        for (int i = 1; number_last_open_brackets < number_priority_close_brackets; i++){
+            std::cout<<expression[i]<<std::endl;
             if (expression[i] == ')'){
+                std::cout<<i<<std::endl;
                 number_priority_close_brackets = i;
             }
         }
+        std::cout<<number_last_open_brackets<<number_priority_close_brackets<<std::endl;
+        std::cout<<"searching_for_priority_brackets"<<std::endl;
         return {number_last_open_brackets, number_priority_close_brackets};
     }
 
     bool calc_3(std::string expression_2){
         for (int i = 1; i != size(expression_2); i++){
             if (expression_2[i] == '+' || expression_2[i] == '-' || expression_2[i] == '*' || expression_2[i] == '/') {
+                std::cout<<"calc_3"<<std::endl;
                 return true;
             }
         }
+        std::cout<<"calc_3"<<std::endl;
         return false;
     }
 
     // Функция для разбиения строки на отдельные элементы (числа и операторы)
-    std::vector<string> tokenize(const std::string &expression) {
+    std::vector<string> tokenize(const std::string expression) {
+        std::cout<<expression<<std::endl;
         std::vector<string> tokens;
         std::string token;
         int minus = 0;
@@ -350,6 +359,8 @@ private:
         if (!token.empty()) {
             tokens.push_back(token); // Последнее число в выражении
         }
+        pprint_2(tokens);
+        std::cout<<"tokenize"<<std::endl;
         return tokens;
     }
 
@@ -381,19 +392,23 @@ private:
                         if (num != 0) {
                             result /= num;
                         } else {
+                            std::cout<<"calculate_1"<<std::endl;
                             return "Деление на ноль";
                         }
                         break;
                 }
             }
         }
+        std::cout<<"calculate_1"<<std::endl;
         return std::to_string(result);
     }
 
     // Метод для подсчёта простых выражений
     std::string calc_2 (std::vector <int> priority_brackets, std::string expression_1){
+        std::cout<<expression_1<<std::endl;
         std::string bracket = this->calculate_1(this->tokenize(expression_1.substr(priority_brackets[0], priority_brackets[1])));
         //return expression_1.substr(0, priority_brackets[0]) + bracket + expression_1.substr(priority_brackets[1]);
+        std::cout<<"calc_2"<<std::endl;
         return bracket;
 
 
