@@ -37,219 +37,6 @@ std::string expression_trimming(const std::string& expression) {
 }
 
 
-/*
-
-class ExpressionCalculator {
-private:
-    string expression;
-
-    bool isOperator(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
-    }
-
-    int precedence(char op) {
-        if (op == '+' || op == '-')
-            return 1;
-        if (op == '*' || op == '/')
-            return 2;
-        if (op == '^')
-            return 3;
-        return 0;
-    }
-
-    double applyOp(double a, double b, char op) {
-        switch (op) {
-            case '+': return a + b;
-            case '-': return a - b;
-            case '*': return a * b;
-            case '/': return a / b;
-            case '^': return pow(a, b);
-            default: return 0;
-        }
-    }
-
-    double evaluate(string tokens) {
-        stack<double> values;
-        stack<char> ops;
-
-        for (int i = 0; i < tokens.length(); i++) {
-            if (tokens[i] == ' ')
-                continue;
-
-            if (isdigit(tokens[i]) || tokens[i] == '.') {
-                string num;
-                while (i < tokens.length() && (isdigit(tokens[i]) || tokens[i] == '.'))
-                    num += tokens[i++];
-                i--;
-
-                stringstream ss(num);
-                double value;
-                ss >> value;
-                values.push(value);
-            } else if (tokens[i] == '(') {
-                ops.push(tokens[i]);
-            } else if (tokens[i] == ')') {
-                while (ops.top() != '(') {
-                    double b = values.top();
-                    values.pop();
-
-                    double a = values.top();
-                    values.pop();
-
-                    char op = ops.top();
-                    ops.pop();
-
-                    values.push(applyOp(a, b, op));
-                }
-                ops.pop();
-            } else if (isOperator(tokens[i])) {
-                while (!ops.empty() && precedence(ops.top()) >= precedence(tokens[i])) {
-                    double b = values.top();
-                    values.pop();
-
-                    double a = values.top();
-                    values.pop();
-
-                    char op = ops.top();
-                    ops.pop();
-
-                    values.push(applyOp(a, b, op));
-                }
-                ops.push(tokens[i]);
-            }
-        }
-
-        while (!ops.empty()) {
-            double b = values.top();
-            values.pop();
-
-            double a = values.top();
-            values.pop();
-
-            char op = ops.top();
-            ops.pop();
-
-            values.push(applyOp(a, b, op));
-        }
-
-        return values.top();
-    }
-
-public:
-    ExpressionCalculator(string exp) : expression(exp) {}
-
-    double calculate() {
-        string tokens;
-        for (char c : expression) {
-            if (c != ' ')
-                tokens += c;
-        }
-        return evaluate(tokens);
-    }
-};
-*/
-/*
-// Функция, которая вычисляет значение выражения в скобках
-double evaluateExpression(const string& expr) {
-    istringstream iss(expr);
-    stack<double> operands;
-    stack<char> operators;
-
-    char current;
-    bool isNegative = false; // Флаг для отслеживания отрицательных чисел
-    double negativeMultiplier = 1; // Множитель для отрицательных чисел
-    while (iss >> current) {
-        if (isdigit(current) || current == '.') {
-            iss.putback(current);
-            double num;
-            iss >> num;
-            if (isNegative) {
-                num *= negativeMultiplier;
-                isNegative = false;
-            }
-            operands.push(num);
-        } else if (current == '(') {
-            string nestedExpr;
-            getline(iss, nestedExpr, ')');
-            double nestedResult = evaluateExpression(nestedExpr);
-            if (isNegative) {
-                nestedResult *= negativeMultiplier;
-                isNegative = false;
-            }
-            operands.push(nestedResult);
-        } else if (current == '+' || current == '-' || current == '*' || current == '/') {
-            while (!operators.empty() && (operators.top() == '*' || operators.top() == '/')) {
-                char op = operators.top();
-                operators.pop();
-                double operand2 = operands.top();
-                operands.pop();
-                double operand1 = operands.top();
-                operands.pop();
-                if (op == '*')
-                    operands.push(operand1 * operand2);
-                else if (op == '/')
-                    operands.push(operand1 / operand2);
-            }
-            operators.push(current);
-        } else if (current == 's' || current == 'c' || current == 't') {
-            string func;
-            iss >> func; // Считываем функцию
-            double operand = operands.top();
-            operands.pop();
-            if (func == "sin")
-                operands.push(sin(operand));
-            else if (func == "cos")
-                operands.push(cos(operand));
-            else if (func == "tan")
-                operands.push(tan(operand));
-            else if (func == "asin")
-                operands.push(asin(operand));
-            else if (func == "acos")
-                operands.push(acos(operand));
-            else if (func == "atan")
-                operands.push(atan(operand));
-        } else if (current == '-') {
-            if (operands.empty() || (iss.peek() != '(' && !isdigit(iss.peek()))) {
-                isNegative = true;
-                negativeMultiplier = -1;
-            } else {
-                while (!operators.empty() && (operators.top() == '*' || operators.top() == '/')) {
-                    char op = operators.top();
-                    operators.pop();
-                    double operand2 = operands.top();
-                    operands.pop();
-                    double operand1 = operands.top();
-                    operands.pop();
-                    if (op == '*')
-                        operands.push(operand1 * operand2);
-                    else if (op == '/')
-                        operands.push(operand1 / operand2);
-                }
-                operators.push(current);
-            }
-        }
-    }
-
-    while (!operators.empty()) {
-        char op = operators.top();
-        operators.pop();
-        double operand2 = operands.top();
-        operands.pop();
-        double operand1 = operands.top();
-        operands.pop();
-        if (op == '+')
-            operands.push(operand1 + operand2);
-        else if (op == '-')
-            operands.push(operand1 - operand2);
-        else if (op == '*')
-            operands.push(operand1 * operand2);
-        else if (op == '/')
-            operands.push(operand1 / operand2);
-    }
-
-    return operands.top();
-}
-*/
 
 void pprint_2(std::vector<std::string> nestedVector ){
     // Выводим вложенный вектор в консоль
@@ -305,16 +92,19 @@ private:
     }
 
     // Метод для поиска приоритетных скобок
-    std::vector <int> searching_for_priority_brackets (const std::string expression, int number_of_brackets){
+    std::vector <int> searching_for_priority_brackets (std::string expression, int number_of_brackets){
+        std::cout<<expression<<"expression   "<<size(expression)<<std::endl;
         int number_last_open_brackets;
-        for (int i = 0; number_of_brackets != 0; i++){
+        for (int i = size(expression) - 1; i != -1; i--){
+            std::cout<<expression[i]<<std::endl;
             if (expression[i] == '('){
                 number_last_open_brackets = i;
-                number_of_brackets--;
+                break;
             }
         }
-        int number_priority_close_brackets = 0;
-        for (int i = 1; number_last_open_brackets < number_priority_close_brackets; i++){
+        std::cout<<number_last_open_brackets<<std::endl;
+        int number_priority_close_brackets = -1;
+        for (int i = 1; number_last_open_brackets > number_priority_close_brackets; i++){
             std::cout<<expression[i]<<std::endl;
             if (expression[i] == ')'){
                 std::cout<<i<<std::endl;
@@ -406,12 +196,10 @@ private:
     // Метод для подсчёта простых выражений
     std::string calc_2 (std::vector <int> priority_brackets, std::string expression_1){
         std::cout<<expression_1<<std::endl;
-        std::string bracket = this->calculate_1(this->tokenize(expression_1.substr(priority_brackets[0], priority_brackets[1])));
-        //return expression_1.substr(0, priority_brackets[0]) + bracket + expression_1.substr(priority_brackets[1]);
+        pprint_1(priority_brackets);
+        std::string bracket = this->calculate_1(this->tokenize(expression_1.substr(priority_brackets[0] + 1, priority_brackets[1] - priority_brackets[0]-1)));
         std::cout<<"calc_2"<<std::endl;
-        return bracket;
-
-
+        return expression_1.substr(0, priority_brackets[0]) + bracket + expression_1.substr(priority_brackets[1]+1);
     }
 public:
     //Основной метод калькулятора
@@ -422,7 +210,7 @@ public:
             expression_1 = this->calc_2(this->searching_for_priority_brackets(expression_1, this->counting_parentheses(expression_1)[0]), expression_1);
         }
         std::cout<<"Без скобок"<<std::endl;
-        return this->calculate_1(this->tokenize(expression_1));
+        return expression_trimming(this->calculate_1(this->tokenize(expression_1)));
     }
 };
 
