@@ -216,6 +216,33 @@ public:
 
 
 
+// Вспомогательный метод для подсчёта факториалов
+int factorial_1(std::string entry_string){
+    if (entry_string[entry_string.end()] = ')'){
+        int level = 1
+        for (int i = lentry_string.end() - 1; level > 0; i--)
+            if (entry_string[i] == ')'){
+                level++;
+            }else if (entry_string[i] == '('){
+                level--;
+            }
+    }else{
+        for (int i = entry_string.end(); i > 0; i--){
+            if (entry_string[i] == '+' || entry_string == '*' || entry_string == '/'){
+                return entry_string.substr(i+1);
+            } else if (entry_string == '-') {
+                if (entry_string[i-1] == '+' || entry_string == '-'|| entry_string == '*' || entry_string == '/'){
+                    return entry_string.substr(i);
+                }else{
+                    return entry_string.substr(i+1);
+                }
+            }
+        }
+    }
+
+}
+
+
 
 
 
@@ -261,7 +288,9 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
         entry_string = "";
     } else if (std::string(text) == "!") {
         // Вычисляем факториал, если нажата кнопка "!"
-        try {
+
+        entry_string
+        if (if_coma())
             int n = std::stoi(entry_string);
             entry_string = std::to_string(factorial(n));
         } catch (...) {
@@ -387,11 +416,12 @@ int main(int argc, char *argv[]) {
         "4", "5", "6", "*",
         "1", "2", "3", "-",
         "0", ".", "=", "+",
-        "C", "CE", "00", "000"
+        "C", "CE", "00", "000",
+        "sin", "cos", "ctg", "tg"
     };
 
     // Создаем кнопки и присоединяем к ним функцию button_clicked
-    for (int i = 0; i < 24; ++i) {
+    for (int i = 0; i < 28; ++i) {
         GtkWidget *button = create_custom_button(button_labels[i]);
         g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), entry);
         gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
