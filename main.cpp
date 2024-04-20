@@ -67,7 +67,7 @@ void pprint(std::vector <std::vector<int>> nestedVector ){
     }
 }
 
-class calculate{
+class Calculate{
 private:
     //Метод подсчёта скобок
     std::vector<int> counting_parentheses (const std::string& expression){
@@ -215,44 +215,58 @@ public:
 };
 
 
-
-// Вспомогательный метод для подсчёта факториалов
-std::string factorial_1(std::string entry_string){
-    std::cout<<"factorial_1"<<std::endl;
-    std::cout<<entry_string[size(entry_string)-1]<<std::endl;
-    if (entry_string[size(entry_string)-1] == ')'){
-        std::cout<<"Со скобками"<<std::endl;
-        int level = 1;
-        short close_brackets;
-        for (int i = size(entry_string) - 2; level > 0; i--){
-            if (entry_string[i] == ')'){
-                level++;
-            }else if (entry_string[i] == '('){
-                level--;
-                close_brackets = i;
-            }
-        }
-        return entry_string.substr(close_brackets);
-    }else{
-        std::cout<<"Без скобок"<<std::endl;
-        std::cout<<size(entry_string)-1<<std::endl;
-        for (int i = size(entry_string)-1; i > -1; i--){
-            std::cout<<"gh"<<std::endl;
-            if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/'){
-                return entry_string.substr(i+1);
-            } else if (entry_string[i] == '-') {
-                if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
-                    return entry_string.substr(i);
-                }else{
-                    return entry_string.substr(i+1);
+class Factorial (public Calculate){
+    // Вспомогательный метод для подсчёта факториалов
+    std::string factorial_1(std::string entry_string){
+        std::cout<<"factorial_1"<<std::endl;
+        std::cout<<entry_string[size(entry_string)-1]<<std::endl;
+        if (entry_string[size(entry_string)-1] == ')'){
+            std::cout<<"Со скобками"<<std::endl;
+            int level = 1;
+            short close_brackets;
+            for (int i = size(entry_string) - 2; level > 0; i--){
+                if (entry_string[i] == ')'){
+                    level++;
+                }else if (entry_string[i] == '('){
+                    level--;
+                    close_brackets = i;
                 }
             }
+            return entry_string.substr(close_brackets);
+        }else{
+            std::cout<<"Без скобок"<<std::endl;
+            std::cout<<size(entry_string)-1<<std::endl;
+            for (int i = size(entry_string)-1; i > -1; i--){
+                std::cout<<"gh"<<std::endl;
+                if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/'){
+                    return entry_string.substr(i+1);
+                } else if (entry_string[i] == '-') {
+                    if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
+                        return entry_string.substr(i);
+                    }else{
+                        return entry_string.substr(i+1);
+                    }
+                }
+            }
+            return entry_string;
         }
-        return entry_string;
+    }
+    // Функция для вычисления факториала числа
+    std::string factorial(int n) {
+        if (n < 0) return 0; // Факториал отрицательного числа не определен
+        unsigned long long result = 1;
+        for (int i = 1; i <= n; ++i) {
+            result *= i;
+        }
+        return std::to_string(result);
+    }
+    std::string setup(std::string entry_string){
+        std::string priority_number = factorial_1(entry_string);
+        std::cout<<priority_number<<std::endl;
+        factorial(factorial_1(entry_string))
+        std::cout<<factorial(priority_number)<<std::endl;
     }
 }
-
-
 
 
 
@@ -262,15 +276,7 @@ bool isOperator(char c) {
 }
 
 
-// Функция для вычисления факториала числа
-unsigned long long factorial(int n) {
-    if (n < 0) return 0; // Факториал отрицательного числа не определен
-    unsigned long long result = 1;
-    for (int i = 1; i <= n; ++i) {
-        result *= i;
-    }
-    return result;
-}
+
 
 
 // Функция, вызываемая при нажатии кнопок
@@ -299,9 +305,11 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
         entry_string = "";
     } else if (std::string(text) == "!") {
         // Вычисляем факториал, если нажата кнопка "!"
-
+        Factorial factor;
+        factor.setup(entry_string;)
         std::string priority_number = factorial_1(entry_string);
         std::cout<<priority_number<<std::endl;
+        factorial(priority_number)
         std::cout<<factorial(priority_number)<<std::endl;
 
     } else if (std::string(text) == "%") {
