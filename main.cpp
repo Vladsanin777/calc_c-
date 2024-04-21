@@ -6,11 +6,25 @@
 #include <ctime>
 #include <stack>
 #include <vector>
+#include <utility> // для std::pair
+
 #include <cmath>
 #include <sstream>
+#include <map>
 
 
 using namespace std;
+
+
+
+void red_table(){
+    std::cout<<"Ошибка"<<std::endl;
+}
+
+
+
+
+
 
 bool if_coma(const std::string& expression){
     for (char i : expression){
@@ -215,7 +229,20 @@ public:
 };
 
 
-class Factorial (public Calculate){
+
+class Factorial : public Calculate {
+private:
+    // Функция для вычисления факториала числа
+    std::string factorial(int n) {
+        if (n < 0) return "Ошибка"; // Факториал отрицательного числа не определен
+        unsigned long long result = 1;
+        for (int i = 1; i <= n; ++i) {
+            result *= i;
+        }
+        return std::to_string(result);
+    }
+
+public:
     // Вспомогательный метод для подсчёта факториалов
     std::string factorial_1(std::string entry_string){
         std::cout<<"factorial_1"<<std::endl;
@@ -232,41 +259,56 @@ class Factorial (public Calculate){
                     close_brackets = i;
                 }
             }
-            return entry_string.substr(close_brackets);
+            std::string kl = this->factorial(std::stoi(this->calc(entry_string.substr(close_brackets))));
+            if (kl != "Ошибка"){
+                return entry_string.substr(0, close_brackets) + kl;
+            }else{
+                red_table();
+                return entry_string;
+            }
         }else{
             std::cout<<"Без скобок"<<std::endl;
             std::cout<<size(entry_string)-1<<std::endl;
-            for (int i = size(entry_string)-1; i > -1; i--){
+            for (int i = size(entry_string)-1; i > 0; i--){
                 std::cout<<"gh"<<std::endl;
                 if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/'){
                     return entry_string.substr(i+1);
                 } else if (entry_string[i] == '-') {
                     if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
-                        return entry_string.substr(i);
+                        std::cout<<"0"<<std::endl;
+                        std::string kl = this->factorial(std::stoi(entry_string.substr(i)));
+                        if (kl != "Ошибка"){
+                            return entry_string.substr(0, i - 1) + kl;
+                        }else{
+                            red_table();
+                            return entry_string;
+                        }
                     }else{
-                        return entry_string.substr(i+1);
+                        std::cout<<"1"<<std::endl;
+                        std::string kl = this->factorial(std::stoi(entry_string.substr(i+1)));
+                        if (kl != "Ошибка"){
+                            return entry_string.substr(0, i) + kl;
+                        }else{
+                            red_table();
+                            return entry_string;
+                        }
                     }
                 }
             }
-            return entry_string;
+            std::cout<<"2"<<std::endl;
+            std::string kl = this->factorial(std::stoi(entry_string));
+            if (kl != "Ошибка"){
+                return kl;
+            }else{
+                red_table();
+                return entry_string;
+            }
         }
     }
-    // Функция для вычисления факториала числа
-    std::string factorial(int n) {
-        if (n < 0) return 0; // Факториал отрицательного числа не определен
-        unsigned long long result = 1;
-        for (int i = 1; i <= n; ++i) {
-            result *= i;
-        }
-        return std::to_string(result);
-    }
-    std::string setup(std::string entry_string){
-        std::string priority_number = factorial_1(entry_string);
-        std::cout<<priority_number<<std::endl;
-        factorial(factorial_1(entry_string))
-        std::cout<<factorial(priority_number)<<std::endl;
-    }
-}
+};
+
+
+
 
 
 
@@ -292,7 +334,7 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
 
     // Проверяем, была ли нажата кнопка "="
     if (std::string(text) == "=") {
-        calculate cal;
+        Calculate cal;
         std::string result = cal.calc(entry_string);
         std::cout<<"kl"<<endl;
         entry_string = result;
@@ -306,11 +348,7 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
     } else if (std::string(text) == "!") {
         // Вычисляем факториал, если нажата кнопка "!"
         Factorial factor;
-        factor.setup(entry_string;)
-        std::string priority_number = factorial_1(entry_string);
-        std::cout<<priority_number<<std::endl;
-        factorial(priority_number)
-        std::cout<<factorial(priority_number)<<std::endl;
+        entry_string = factor.factorial_1(entry_string);
 
     } else if (std::string(text) == "%") {
         int last_operator;
@@ -347,7 +385,7 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
                             break;
                         }
                     }
-                    calculate cal;
+                    Calculate cal;
                     result = std::stod(cal.calc(begin_str.substr(start_expression)));
                     percent = expression_trimming(std::to_string(result / 100 * end_double));
                     break;
