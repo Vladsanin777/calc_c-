@@ -16,11 +16,48 @@
 using namespace std;
 
 
+// Глобальная переменная для хранения указателя на GtkEntry
+GtkWidget *global_entry = NULL;
 
-void red_table(){
-    std::cout<<"Ошибка"<<std::endl;
-}
 
+// Объявление глобальной переменной для хранения предыдущего цвета обводки
+static GdkRGBA previous_color;
+
+
+
+class ErrorCalc {
+private:
+
+    // Функция для сброса цвета обводки к предыдущему
+    static gboolean reset_border_color() {
+        GtkCssProvider *provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: rgba(0,0,0,0); transition: border-color 1s ease-in-out; }", -1, NULL);
+        gtk_style_context_add_provider(gtk_widget_get_style_context(global_entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+        return G_SOURCE_REMOVE;
+    }
+
+public:
+    //  Функция вызываемая при арифметической ошибке
+    void red_table() {
+        if (global_entry == NULL) {
+            g_print("Error: No GtkEntry provided for animation.\n");
+            return;
+        }
+
+        GdkRGBA color;
+        gdk_rgba_parse(&color, "red");
+
+
+        // Создание анимации с использованием CSS
+        GtkCssProvider *provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: red; transition: border-color 1s ease-in-out; }", -1, NULL);
+        gtk_style_context_add_provider(gtk_widget_get_style_context(global_entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+        // Установка таймера на возврат к предыдущему цвету обводки через 500 миллисекунд (полсекунды)
+        g_timeout_add(2000, (GSourceFunc)reset_border_color, global_entry);
+    }
+};
 
 
 
@@ -234,7 +271,11 @@ class Factorial : public Calculate {
 private:
     // Функция для вычисления факториала числа
     std::string factorial(int n) {
-        if (n < 0) return "Ошибка"; // Факториал отрицательного числа не определен
+        if (n < 0) {
+            ErrorCalc err;
+            err.red_table();
+            return "!"; // Факториал отрицательного числа не определен
+        }
         unsigned long long result = 1;
         for (int i = 1; i <= n; ++i) {
             result *= i;
@@ -260,12 +301,7 @@ public:
                 }
             }
             std::string kl = this->factorial(std::stoi(this->calc(entry_string.substr(close_brackets))));
-            if (kl != "Ошибка"){
-                return entry_string.substr(0, close_brackets) + kl;
-            }else{
-                red_table();
-                return entry_string;
-            }
+            return kl == "!" ? entry_string : entry_string.substr(0, close_brackets) + kl;
         }else{
             std::cout<<"Без скобок"<<std::endl;
             std::cout<<size(entry_string)-1<<std::endl;
@@ -275,34 +311,19 @@ public:
                     return entry_string.substr(i+1);
                 } else if (entry_string[i] == '-') {
                     if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
-                        std::cout<<"0"<<std::endl;
-                        std::string kl = this->factorial(std::stoi(entry_string.substr(i)));
-                        if (kl != "Ошибка"){
-                            return entry_string.substr(0, i - 1) + kl;
-                        }else{
-                            red_table();
-                            return entry_string;
-                        }
+                        ErrorCalc err;
+                        err.red_table();
+                        return entry_string;
                     }else{
                         std::cout<<"1"<<std::endl;
                         std::string kl = this->factorial(std::stoi(entry_string.substr(i+1)));
-                        if (kl != "Ошибка"){
-                            return entry_string.substr(0, i) + kl;
-                        }else{
-                            red_table();
-                            return entry_string;
-                        }
+                        return kl == "!" ? entry_string : entry_string.substr(0, i + 1) + kl;
                     }
                 }
             }
             std::cout<<"2"<<std::endl;
             std::string kl = this->factorial(std::stoi(entry_string));
-            if (kl != "Ошибка"){
-                return kl;
-            }else{
-                red_table();
-                return entry_string;
-            }
+            return kl == "!" ? entry_string : kl;
         }
     }
 };
@@ -462,6 +483,9 @@ int main(int argc, char *argv[]) {
     gtk_entry_set_text(GTK_ENTRY(entry), "");
     gtk_editable_set_editable(GTK_EDITABLE(entry), FALSE); // Не редактируемый
     gtk_grid_attach(GTK_GRID(grid), entry, 0, 0, 4, 1);
+
+    // Установка глобальной переменной global_entry
+    global_entry = entry;
 
     // Массив с названиями кнопок калькулятора
     const gchar *button_labels[] = {
