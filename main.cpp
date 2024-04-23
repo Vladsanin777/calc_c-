@@ -267,6 +267,111 @@ public:
 
 
 
+
+
+class Percent : public Calculate {
+private:
+    // Вспомогательный метод для подсчёта процента
+    std::string percent_2(std::string entry_string){
+        std::cout<<"percent_1"<<std::endl;
+        std::cout<<entry_string[size(entry_string)-1]<<std::endl;
+        if (entry_string[size(entry_string)-1] == ')'){
+            std::cout<<"Со скобками"<<std::endl;
+            int level = 1;
+            short close_brackets;
+            for (int i = size(entry_string) - 2; level > 0; i--){
+                if (entry_string[i] == ')'){
+                    level++;
+                }else if (entry_string[i] == '('){
+                    level--;
+                    close_brackets = i;
+                }
+            }
+            std::string kl = this->factorial(std::stoi(this->calc(entry_string.substr(close_brackets))));
+            return kl == "!" ? entry_string : entry_string.substr(0, close_brackets) + kl;
+        }else{
+            std::cout<<"Без скобок"<<std::endl;
+            std::cout<<size(entry_string)-1<<std::endl;
+            for (int i = size(entry_string)-1; i > 0; i--){
+                std::cout<<"gh"<<std::endl;
+                if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/'){
+                    return entry_string.substr(i+1);
+                } else if (entry_string[i] == '-') {
+                    if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
+                        ErrorCalc err;
+                        err.red_table();
+                        return entry_string;
+                    }else{
+                        std::cout<<"1"<<std::endl;
+                        std::string kl = this->factorial(std::stoi(entry_string.substr(i+1)));
+                        return kl == "!" ? entry_string : entry_string.substr(0, i + 1) + kl;
+                    }
+                }
+            }
+            std::cout<<"2"<<std::endl;
+            std::string kl = this->factorial(std::stoi(entry_string));
+            return kl == "!" ? entry_string : kl;
+        }
+    }
+public:
+    std::string percent_1(std::string entry_string){
+        char last_operator == '0';
+        for (int i = entry_string.length() - 1; last_operator == '0'; --i){
+            if (entry_string[i] == '+' || entry_string[i] == '-' || entry_string[i] == '*' || entry_string[i] == '/'){
+                last_operator = entry_string[i];
+            }
+        }
+        if (entry_string[size(entry_string)-1] == ')'){
+            if (last_operator == '0' || last_operator == '*' || last_operator == '/'){
+                double r = std::stod(entry_string) / 100;
+                entry_string = expression_trimming(std::to_string(r));
+            }else if (){
+
+        }else{
+            std::string begin_str = entry_string.substr(0, last_operator);
+            double end_double = std::stod(entry_string.substr(last_operator + 1));
+            char operat = entry_string[last_operator];
+            std::cout<<begin_str<<end_double<<operat;
+            std::string percent;
+            int number_of_open_parentheses = 1;
+            int start_expression = 0;
+            double result;
+            switch (operat) {
+                case '+':
+                case '-':
+
+                    for (int i = begin_str.length() - 1; i >= 0; --i){
+                        switch (begin_str[i]){
+                            case '(':
+                                number_of_open_parentheses -= 1;
+                                break;
+                            case ')':
+                                number_of_open_parentheses += 1;
+                                break;
+                        }
+                        if (number_of_open_parentheses == 0){
+                            start_expression = i + 1;
+                            break;
+                        }
+                    }
+                    Calculate cal;
+                    result = std::stod(cal.calc(begin_str.substr(start_expression)));
+                    percent = expression_trimming(std::to_string(result / 100 * end_double));
+                    break;
+                            case '*':
+                            case '/':
+                                double r = end_double / 100;
+                                percent = expression_trimming(std::to_string(r));
+                                break;
+            }
+            entry_string = begin_str + operat + percent;
+        }
+    }
+};
+
+
+
+
 class Factorial : public Calculate {
 private:
     // Функция для вычисления факториала числа
