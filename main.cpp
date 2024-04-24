@@ -313,14 +313,20 @@ private:
             return kl == "!" ? entry_string : kl;
         }
     }
-public:
-    std::string percent_1(std::string entry_string){
-        char last_operator == '0';
-        for (int i = entry_string.length() - 1; last_operator == '0'; --i){
-            if (entry_string[i] == '+' || entry_string[i] == '-' || entry_string[i] == '*' || entry_string[i] == '/'){
+    bool easy_expression (std::string entry_string){
+        for (int i = entry_string.length() - 1; i >= 0 && last_operator == '0'; --i) {
+            if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/') {
+                last_operator = entry_string[i];
+            } else if (entry_string[i] == '-' && (i == 0 || entry_string[i - 1] != '-')) {
                 last_operator = entry_string[i];
             }
         }
+        return entry_string[last_operator] == '-' || entry_string[last_operator] == '+';
+    }
+public:
+    std::string percent_1(std::string entry_string){
+        char last_operator == '0';
+
         if (entry_string[size(entry_string)-1] == ')'){
             if (last_operator == '0' || last_operator == '*' || last_operator == '/'){
                 double r = std::stod(entry_string) / 100;
