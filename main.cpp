@@ -1,4 +1,4 @@
-// g++ main.cpp -o k `pkg-config --cflags --libs gtk+-3.0`
+// g++ -std=c++2b main.cpp -o k `pkg-config --cflags --libs gtk+-3.0`
 #include <gtk/gtk.h>
 #include <string>
 #include <iostream>
@@ -6,6 +6,7 @@
 #include <ctime>
 #include <stack>
 #include <vector>
+#include <algorithm>
 #include <utility> // для std::pair
 
 #include <cmath>
@@ -15,25 +16,48 @@
 
 using namespace std;
 
-
 // Глобальная переменная для хранения указателя на GtkEntry
 GtkWidget *global_entry = NULL;
-
 
 // Объявление глобальной переменной для хранения предыдущего цвета обводки
 static GdkRGBA previous_color;
 
-
-
+// Добавлено объявление класса с указанием публичного доступа
 class ErrorCalc {
 private:
+    // Статический метод для трясущегося эффекта
+    //Доделать проблема в том что незаметнотряска
+    static gboolean move_widget(gpointer data) {
+        GtkWidget *widget = GTK_WIDGET(data);
+        static int i = 0; // Используем статическую переменную для хранения состояния
+
+        GtkAllocation allocation;
+        gtk_widget_get_allocation(widget, &allocation);
+
+        if (i % 2 == 0) {
+            allocation.x += 10; // Сдвигаем вправо на 10 пикселей
+        } else {
+            allocation.x -= 10; // Сдвигаем влево на 10 пикселей
+        }
+
+        gtk_widget_set_allocation(widget, &allocation);
+        gtk_widget_queue_draw(widget);
+
+        i++;
+        if (i >= 10) {
+            i = 0; // Сбрасываем счетчик после 10 итераций
+            return FALSE; // Завершаем таймер
+        }
+        return TRUE; // Продолжаем таймер
+    }
 
     // Функция для сброса цвета обводки к предыдущему
-    static gboolean reset_border_color() {
+    static gboolean reset_border_color(gpointer data) {
+        GtkWidget *widget = GTK_WIDGET(data);
         GtkCssProvider *provider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: rgba(0,0,0,0); transition: border-color 1s ease-in-out; }", -1, NULL);
-        gtk_style_context_add_provider(gtk_widget_get_style_context(global_entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
-
+        gtk_style_context_add_provider(gtk_widget_get_style_context(widget), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+        g_object_unref(provider); // освобождаем ресурсы
         return G_SOURCE_REMOVE;
     }
 
@@ -48,14 +72,16 @@ public:
         GdkRGBA color;
         gdk_rgba_parse(&color, "red");
 
-
         // Создание анимации с использованием CSS
         GtkCssProvider *provider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: red; transition: border-color 1s ease-in-out; }", -1, NULL);
         gtk_style_context_add_provider(gtk_widget_get_style_context(global_entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+        g_object_unref(provider); // освобождаем ресурсы
 
-        // Установка таймера на возврат к предыдущему цвету обводки через 500 миллисекунд (полсекунды)
+        // Установка таймера на возврат к предыдущему цвету обводки через 2000 миллисекунд (две секунды)
         g_timeout_add(2000, (GSourceFunc)reset_border_color, global_entry);
+        // Вызываем функцию перемещения через определенные интервалы времени
+        g_timeout_add(300, move_widget, global_entry); // Вызываем статический метод
     }
 };
 
@@ -118,80 +144,70 @@ void pprint(std::vector <std::vector<int>> nestedVector ){
     }
 }
 
-class Calculate{
+class Calculate {
 private:
-    //Метод подсчёта скобок
-    std::vector<int> counting_parentheses (const std::string& expression){
-        int bracket_1 = 0, bracket_2 = 0;
-        for (char e : expression){
-            switch (e){
-                case '(':
-                    bracket_1++;
-                    break;
-                case ')':
-                    bracket_2++;
-                    break;
-            }
-        }
-        std::cout<<"counting_parentheses"<<std::endl;
+    // Метод подсчёта скобок
+    std::vector<int> counting_parentheses(const std::string &expression) {
+        int bracket_1 = std::count(expression.begin(), expression.end(), '(');
+        int bracket_2 = std::count(expression.begin(), expression.end(), ')');
+        std::cout << "counting_parentheses" << std::endl;
         return std::vector<int>{bracket_1, bracket_2};
     }
 
-
     // Метод для поиска приоритетных скобок
-    std::vector <int> searching_for_priority_brackets (std::string expression, int number_of_brackets){
-        std::cout<<expression<<"expression   "<<size(expression)<<std::endl;
-        int number_last_open_brackets;
-        for (int i = size(expression) - 1; i != -1; i--){
-            std::cout<<expression[i]<<std::endl;
-            if (expression[i] == '('){
-                number_last_open_brackets = i;
-                break;
-            }
-        }
-        std::cout<<number_last_open_brackets<<std::endl;
-        int number_priority_close_brackets = -1;
-        for (int i = 1; number_last_open_brackets > number_priority_close_brackets; i++){
-            std::cout<<expression[i]<<std::endl;
-            if (expression[i] == ')'){
-                std::cout<<i<<std::endl;
-                number_priority_close_brackets = i;
-            }
-        }
-        std::cout<<number_last_open_brackets<<number_priority_close_brackets<<std::endl;
-        std::cout<<"searching_for_priority_brackets"<<std::endl;
+    std::vector<int> searching_for_priority_brackets(std::string expression, int number_of_brackets) {
+        int number_last_open_brackets = expression.find_last_of('(');
+        int number_priority_close_brackets = expression.find(')', number_last_open_brackets);
+        std::cout << "searching_for_priority_brackets" << std::endl;
         return {number_last_open_brackets, number_priority_close_brackets};
     }
-    //Равность двух чисел
-    bool equality_of_two_numbers (std::vector<int> counting_parentheses){
-        std::cout<<"equality_of_two_numbers"<<std::endl;
+
+    // Равность двух чисел
+    bool equality_of_two_numbers(std::vector<int> counting_parentheses) {
+        std::cout << "equality_of_two_numbers" << std::endl;
         return counting_parentheses[0] == counting_parentheses[1];
     }
-    bool calc_3(std::string expression_2){
-        for (int i = 1; i != size(expression_2); i++){
-            if (expression_2[i] == '+' || expression_2[i] == '-' || expression_2[i] == '*' || expression_2[i] == '/') {
-                std::cout<<"calc_3"<<std::endl;
-                return true;
-            }
-        }
-        std::cout<<"calc_3"<<std::endl;
-        return false;
+
+    // Проверка наличия операций в выражении
+    bool has_operations(const std::string &expression) {
+        return std::any_of(expression.begin(), expression.end(), [](char c) {
+            return c == '+' || c == '-' || c == '*' || c == '/';
+        });
     }
 
+    // Разбиение строки на отдельные элементы (числа и операторы)
+    std::vector<std::string> tokenize(const std::string &expression) {
+        std::vector<std::string> tokens;
+        std::string token;
+        for (char c : expression) {
+            if (isdigit(c) || c == ',' || (token.empty() && c == '-')) {
+                token += c;
+            } else {
+                if (!token.empty()) {
+                    tokens.push_back(token);
+                    token.clear();
+                }
+                tokens.push_back(std::string(1, c)); // Оператор
+            }
+        }
+        if (!token.empty()) {
+            tokens.push_back(token); // Последнее число в выражении
+        }
+        return tokens;
+    }
 
-    std::string calculate_1(std::vector<string> tokens) {
-        pprint_2(tokens);
-        double result = stod(tokens[0]); // Первый токен всегда число
-        char last_operator = '+'; // Начинаем с оператора сложения
-
+    // Выполнение операций над числами
+    std::string calculate_expression(const std::vector<std::string> &tokens) {
+        double result = std::stod(tokens[0]);
+        char last_operator = '+';
         for (size_t i = 1; i < tokens.size(); ++i) {
-            const string &token = tokens[i];
+            const std::string &token = tokens[i];
             if (token == "+" || token == "-" || token == "*" || token == "/") {
                 last_operator = token[0];
             } else {
-                double num = stod(token);
+                double num = std::stod(token);
                 if (i > 1 && tokens[i - 2] == "-") {
-                    num *= -1; // Если число идет после минуса, делаем его отрицательным
+                    num *= -1;
                 }
                 switch (last_operator) {
                     case '+':
@@ -207,226 +223,105 @@ private:
                         if (num != 0) {
                             result /= num;
                         } else {
-                            std::cout<<"calculate_1"<<std::endl;
                             return "Деление на ноль";
                         }
                         break;
                 }
             }
         }
-        std::cout<<"calculate_1"<<std::endl;
         return std::to_string(result);
     }
 
-    // Метод для подсчёта простых выражений
-    std::string calc_2 (std::vector <int> priority_brackets, std::string expression_1){
-        std::cout<<expression_1<<std::endl;
-        pprint_1(priority_brackets);
-        std::string bracket = this->calculate_1(this->tokenize(expression_1.substr(priority_brackets[0] + 1, priority_brackets[1] - priority_brackets[0]-1)));
-        std::cout<<"calc_2"<<std::endl;
-        return expression_1.substr(0, priority_brackets[0]) + bracket + expression_1.substr(priority_brackets[1]+1);
-    }
 public:
-    // Функция для разбиения строки на отдельные элементы (числа и операторы)
-    std::vector<string> tokenize(const std::string expression) {
-        std::cout<<expression<<std::endl;
-        std::vector<string> tokens;
-        std::string token;
-        int minus = 0;
-        for (int i = 0; i < expression.size(); i++) {
-            if ((isdigit(expression[i]) || expression[i] == ',') || (minus == 0 && expression[i] == '-')) { // Если текущий символ - цифра или минус (для отрицательных чисел)
-                minus++;
-                token += expression[i];
-            } else {
-                minus = 0;
-                if (!token.empty()) {
-                    tokens.push_back(token);
-                    token.clear();
-                }
-                tokens.push_back(string(1, expression[i])); // Оператор
-            }
+    // Основной метод калькулятора
+    std::string calc(const std::string &expression) {
+        if (!equality_of_two_numbers(counting_parentheses(expression))) {
+            return "Неравное количество скобок!";
         }
-        if (!token.empty()) {
-            tokens.push_back(token); // Последнее число в выражении
+        std::string expression_1 = expression;
+        while (counting_parentheses(expression_1)[0] != 0) {
+            std::vector<int> priority_brackets = searching_for_priority_brackets(expression_1, counting_parentheses(expression_1)[0]);
+            expression_1 = expression_1.substr(0, priority_brackets[0]) +
+            calculate_expression(tokenize(expression_1.substr(priority_brackets[0] + 1, priority_brackets[1] - priority_brackets[0] - 1))) +
+            expression_1.substr(priority_brackets[1] + 1);
         }
-        pprint_2(tokens);
-        std::cout<<"tokenize"<<std::endl;
-        return tokens;
-    }
-
-    //Основной метод калькулятора
-    std::string calc(std::string expression_1){
-        if (!this->equality_of_two_numbers(this->counting_parentheses(expression_1))) return "Неравное количество скобок!";
-        while (this->counting_parentheses(expression_1)[0] != 0){
-            std::cout<<"Со скобками"<<std::endl;
-            expression_1 = this->calc_2(this->searching_for_priority_brackets(expression_1, this->counting_parentheses(expression_1)[0]), expression_1);
-        }
-        std::cout<<"Без скобок"<<std::endl;
-        return expression_trimming(this->calculate_1(this->tokenize(expression_1)));
+        return calculate_expression(tokenize(expression_1));
     }
 };
 
 
-
-
-
+// Подсчёт процентов
 class Percent : public Calculate {
 private:
-    // Вспомогательный метод для подсчёта процента
-    std::string percent_2(std::string entry_string){
-        std::cout<<"percent_1"<<std::endl;
-        std::cout<<entry_string[size(entry_string)-1]<<std::endl;
-        if (entry_string[size(entry_string)-1] == ')'){
-            std::cout<<"Со скобками"<<std::endl;
-            int level = 1;
-            short close_brackets;
-            for (int i = size(entry_string) - 2; level > 0; i--){
-                if (entry_string[i] == ')'){
-                    level++;
-                }else if (entry_string[i] == '('){
-                    level--;
-                    close_brackets = i;
-                }
-            }
-            std::string kl = this->factorial(std::stoi(this->calc(entry_string.substr(close_brackets))));
-            return kl == "!" ? entry_string : entry_string.substr(0, close_brackets) + kl;
-        }else{
-            std::cout<<"Без скобок"<<std::endl;
-            std::cout<<size(entry_string)-1<<std::endl;
-            for (int i = size(entry_string)-1; i > 0; i--){
-                std::cout<<"gh"<<std::endl;
-                if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/'){
-                    return entry_string.substr(i+1);
-                } else if (entry_string[i] == '-') {
-                    if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
-                        ErrorCalc err;
-                        err.red_table();
-                        return entry_string;
-                    }else{
-                        std::cout<<"1"<<std::endl;
-                        std::string kl = this->factorial(std::stoi(entry_string.substr(i+1)));
-                        return kl == "!" ? entry_string : entry_string.substr(0, i + 1) + kl;
-                    }
-                }
-            }
-            std::cout<<"2"<<std::endl;
-            std::string kl = this->factorial(std::stoi(entry_string));
-            return kl == "!" ? entry_string : kl;
-        }
-    }
-    bool easy_expression (std::string entry_string){
-        for (int i = entry_string.length() - 1; i >= 0 && last_operator == '0'; --i) {
-            if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/') {
-                last_operator = entry_string[i];
-            } else if (entry_string[i] == '-' && (i == 0 || entry_string[i - 1] != '-')) {
-                last_operator = entry_string[i];
-            }
-        }
-        return entry_string[last_operator] == '-' || entry_string[last_operator] == '+';
-    }
+    std::string entry_string;
 public:
-    std::string percent_1(std::string entry_string){
+    Percent(std::string expression) : entry_string(expression) {}
+    std::string percent_1() {
+        std::string result;
+
         char priority_operator = '*';
-        short num_priority_operator;
-        std::string kl;
-        if (entry_string[size(entry_string)-1] == ')'){
-            std::cout<<"Со скобками"<<std::endl;
+        size_t num_priority_operator = entry_string.size() - 1;
+        std::string kl, kl_1;
+
+        const std::string operators = "+-/*";
+
+        // Check if the expression ends with a closing bracket
+        if (entry_string.back() == ')') {
             int level = 1;
-            short close_brackets;
-            for (int i = size(entry_string) - 2; level > 0; i--){
-                if (entry_string[i] == ')'){
+            size_t close_brackets = 0;
+
+            // Find the corresponding opening bracket
+            for (int i = entry_string.size() - 2; level > 0; i--) {
+                if (entry_string[i] == ')') {
                     level++;
-                }else if (entry_string[i] == '('){
+                } else if (entry_string[i] == '(') {
                     level--;
                     close_brackets = i;
                 }
             }
-            if (entry_string[close_brackets - 1] == '-' && "+-/*".find(close_brackets - 2) != std::string::npos) close_brackets--
+
+            // Adjust close_brackets if the previous character is '-' and an operator
+            if (entry_string[close_brackets - 1] == '-' && operators.find(entry_string[close_brackets - 2]) != std::string::npos) {
+                close_brackets--;
+            }
+
             kl = this->calc(entry_string.substr(close_brackets));
             num_priority_operator = close_brackets - 1;
             priority_operator = entry_string[num_priority_operator];
-            //return kl == "!" ? entry_string : entry_string.substr(0, close_brackets) + kl;
-        }else{
-            std::cout<<"Без скобок"<<std::endl;
-            std::cout<<size(entry_string)-1<<std::endl;
-            for (int i = size(entry_string)-1; i > 0; i--){
-                if ("+-/*".find(entry_string[i]) != std::string::npos){
-                    if(entry_string[i] == '-' && "/*-+".find(entry_string[i-1]) != std::string::npos){
-                        kl = entry_string.substr(i)
-                        num_priority_operator = i-1
-                    }else{
-                        kl = entry_string.substr(i+1)
-                        num_priority_operator = i
+        } else {
+            // Find the last operator in the expression
+            for (int i = entry_string.size() - 1; i > 0; i--) {
+                if (operators.find(entry_string[i]) != std::string::npos) {
+                    if (entry_string[i] == '-' && operators.find(entry_string[i - 1]) != std::string::npos) {
+                        kl = entry_string.substr(i);
+                        num_priority_operator = i - 1;
+                    } else {
+                        kl = entry_string.substr(i + 1);
+                        num_priority_operator = i;
                     }
-                    priority_operator = entry_string[num_priority_operator]
+                    priority_operator = entry_string[num_priority_operator];
+                    break;
                 }
             }
-        }
-        if ("/*".find(priority_operator) != std::string:npos){
-            kl = kl / 100
-        }else{
-            if (entry_string[size(entry_string)-1] == ')'){
-                std::cout<<"Со скобками"<<std::endl;
-                int level = 1;
-                short close_brackets;
-                for (int i = size(entry_string) - 2; level > 0; i--){
-                    if (entry_string[i] == ')'){
-                        level++;
-                    }else if (entry_string[i] == '('){
-                        level--;
-                        close_brackets = i;
-                    }
-                }
-                if (entry_string[close_brackets - 1] == '-' && "+-/*".find(close_brackets - 2) != std::string::npos) close_brackets--
+            // If the expression is a number, return the percentage value
+            if (num_priority_operator == 0) {
+                return std::to_string(std::stod(entry_string) / 100);
             }
         }
-        /*
-        if (entry_string[size(entry_string)-1] == ')'){
-            if (last_operator == '0' || last_operator == '*' || last_operator == '/'){
-                double r = std::stod(entry_string) / 100;
-                entry_string = expression_trimming(std::to_string(r));
-            }else if (){
-            }
-        }else{
-            std::string begin_str = entry_string.substr(0, last_operator);
-            double end_double = std::stod(entry_string.substr(last_operator + 1));
-            char operat = entry_string[last_operator];
-            std::cout<<begin_str<<end_double<<operat;
-            std::string percent;
-            int number_of_open_parentheses = 1;
-            int start_expression = 0;
-            double result;
-            switch (operat) {
-                case '+':
-                case '-':
 
-                    for (int i = begin_str.length() - 1; i >= 0; --i){
-                        switch (begin_str[i]){
-                            case '(':
-                                number_of_open_parentheses -= 1;
-                                break;
-                            case ')':
-                                number_of_open_parentheses += 1;
-                                break;
-                        }
-                        if (number_of_open_parentheses == 0){
-                            start_expression = i + 1;
-                            break;
-                        }
-                    }
-                    Calculate cal;
-                    result = std::stod(cal.calc(begin_str.substr(start_expression)));
-                    percent = expression_trimming(std::to_string(result / 100 * end_double));
-                    break;
-                case '*':
-                case '/':
-                    double r = end_double / 100;
-                    percent = expression_trimming(std::to_string(r));
-                    break;
-            }
-            entry_string = begin_str + operat + percent;
+        // Calculate kl_1 and result based on priority_operator
+        kl_1 = (entry_string[num_priority_operator - 1] == ')') ? this->calc(entry_string.substr(0, num_priority_operator)) : entry_string.substr(0, num_priority_operator);
+        double kl_val = std::stod(kl);
+        double kl_1_val = std::stod(kl_1);
+
+        if (priority_operator == '*' || priority_operator == '/') {
+            result = std::to_string(kl_val / 100);
+        } else {
+            result = std::to_string(kl_val * kl_1_val / 100);
         }
-        */
+
+        // Construct and return the final expression
+        return kl_1 + priority_operator + result;
     }
 };
 
@@ -435,6 +330,8 @@ public:
 
 class Factorial : public Calculate {
 private:
+    std::string entry_string;
+
     // Функция для вычисления факториала числа
     std::string factorial(int n) {
         if (n < 0) {
@@ -450,45 +347,36 @@ private:
     }
 
 public:
+    Factorial(std::string expression) : entry_string(std::move(expression)) {}
+
     // Вспомогательный метод для подсчёта факториалов
-    std::string factorial_1(std::string entry_string){
-        std::cout<<"factorial_1"<<std::endl;
-        std::cout<<entry_string[size(entry_string)-1]<<std::endl;
-        if (entry_string[size(entry_string)-1] == ')'){
-            std::cout<<"Со скобками"<<std::endl;
+    std::string factorial_1() {
+        if (entry_string.back() == ')') {
             int level = 1;
-            short close_brackets;
-            for (int i = size(entry_string) - 2; level > 0; i--){
-                if (entry_string[i] == ')'){
-                    level++;
-                }else if (entry_string[i] == '('){
-                    level--;
-                    close_brackets = i;
-                }
+            size_t close_brackets = entry_string.find_last_of('(');
+            if (close_brackets == std::string::npos) {
+                return entry_string; // Вернуть исходную строку, если нет открывающей скобки
             }
-            std::string kl = this->factorial(std::stoi(this->calc(entry_string.substr(close_brackets))));
+            std::string kl = factorial(std::stoi(calc(entry_string.substr(close_brackets))));
             return kl == "!" ? entry_string : entry_string.substr(0, close_brackets) + kl;
-        }else{
-            std::cout<<"Без скобок"<<std::endl;
-            std::cout<<size(entry_string)-1<<std::endl;
-            for (int i = size(entry_string)-1; i > 0; i--){
-                std::cout<<"gh"<<std::endl;
-                if (entry_string[i] == '+' || entry_string[i] == '*' || entry_string[i] == '/'){
-                    return entry_string.substr(i+1);
-                } else if (entry_string[i] == '-') {
-                    if (entry_string[i-1] == '+' || entry_string[i-1] == '-'|| entry_string[i-1] == '*' || entry_string[i-1] == '/'){
+        } else {
+            size_t pos = entry_string.size() - 1;
+            while (pos > 0) {
+                if (entry_string[pos] == '+' || entry_string[pos] == '*' || entry_string[pos] == '/') {
+                    return entry_string.substr(pos + 1);
+                } else if (entry_string[pos] == '-') {
+                    if (pos == 0 || entry_string[pos - 1] == '+' || entry_string[pos - 1] == '-' || entry_string[pos - 1] == '*' || entry_string[pos - 1] == '/') {
                         ErrorCalc err;
                         err.red_table();
                         return entry_string;
-                    }else{
-                        std::cout<<"1"<<std::endl;
-                        std::string kl = this->factorial(std::stoi(entry_string.substr(i+1)));
-                        return kl == "!" ? entry_string : entry_string.substr(0, i + 1) + kl;
+                    } else {
+                        std::string kl = factorial(std::stoi(entry_string.substr(pos + 1)));
+                        return kl == "!" ? entry_string : entry_string.substr(0, pos + 1) + kl;
                     }
                 }
+                --pos;
             }
-            std::cout<<"2"<<std::endl;
-            std::string kl = this->factorial(std::stoi(entry_string));
+            std::string kl = factorial(std::stoi(entry_string));
             return kl == "!" ? entry_string : kl;
         }
     }
@@ -496,15 +384,9 @@ public:
 
 
 
-
-
-
-
 bool isOperator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/';
 }
-
-
 
 
 
@@ -534,65 +416,15 @@ static void button_clicked(GtkWidget *widget, gpointer data) {
         entry_string = "";
     } else if (std::string(text) == "!") {
         // Вычисляем факториал, если нажата кнопка "!"
-        Factorial factor;
-        entry_string = factor.factorial_1(entry_string);
-
+        Factorial factor(entry_string);
+        entry_string = factor.factorial_1();
     } else if (std::string(text) == "%") {
-        int last_operator;
-        for (int i = entry_string.length() - 1; i != 0; --i){
-            if (isOperator(entry_string[i])){
-                last_operator = i;
-                break;
-            }
-        }
-        if (last_operator != 0){
-            std::string begin_str = entry_string.substr(0, last_operator);
-            double end_double = std::stod(entry_string.substr(last_operator + 1));
-            char operat = entry_string[last_operator];
-            std::cout<<begin_str<<end_double<<operat;
-            std::string percent;
-            int number_of_open_parentheses = 1;
-            int start_expression = 0;
-            double result;
-            switch (operat) {
-                case '+':
-                case '-':
-
-                    for (int i = begin_str.length() - 1; i >= 0; --i){
-                        switch (begin_str[i]){
-                            case '(':
-                                number_of_open_parentheses -= 1;
-                                break;
-                            case ')':
-                                number_of_open_parentheses += 1;
-                                break;
-                        }
-                        if (number_of_open_parentheses == 0){
-                            start_expression = i + 1;
-                            break;
-                        }
-                    }
-                    Calculate cal;
-                    result = std::stod(cal.calc(begin_str.substr(start_expression)));
-                    percent = expression_trimming(std::to_string(result / 100 * end_double));
-                    break;
-                case '*':
-                case '/':
-                    double r = end_double / 100;
-                    percent = expression_trimming(std::to_string(r));
-                    break;
-            }
-            entry_string = begin_str + operat + percent;
-        }else{
-            double r = std::stod(entry_string) / 100;
-            entry_string = expression_trimming(std::to_string(r));
-        }
-
+        Percent per(entry_string);
+        entry_string = per.percent_1();
     } else {
         // Добавляем текст с кнопки к текущему тексту
         entry_string += text;
     }
-
     // Устанавливаем новый текст в GtkEntry
     gtk_entry_set_text(GTK_ENTRY(entry), entry_string.c_str());
 }
