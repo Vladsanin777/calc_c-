@@ -365,7 +365,20 @@ public:
         if ("/*".find(priority_operator) != std::string:npos){
             kl = kl / 100
         }else{
-            //Дописать
+            if (entry_string[size(entry_string)-1] == ')'){
+                std::cout<<"Со скобками"<<std::endl;
+                int level = 1;
+                short close_brackets;
+                for (int i = size(entry_string) - 2; level > 0; i--){
+                    if (entry_string[i] == ')'){
+                        level++;
+                    }else if (entry_string[i] == '('){
+                        level--;
+                        close_brackets = i;
+                    }
+                }
+                if (entry_string[close_brackets - 1] == '-' && "+-/*".find(close_brackets - 2) != std::string::npos) close_brackets--
+            }
         }
         /*
         if (entry_string[size(entry_string)-1] == ')'){
