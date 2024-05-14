@@ -436,72 +436,127 @@ GtkWidget *create_custom_button(const gchar *label) {
     return button;
 }
 
+
+
+
+
+void on_window_realize(GtkWidget *widget, gpointer data) {
+    GtkWidget *entry = GTK_WIDGET(data);
+
+    // Получаем размеры окна и устанавливаем ширину entry
+    int window_width;
+    gtk_window_get_size(GTK_WINDOW(widget), &window_width, NULL);
+    int entry_width = window_width - 10; // Ширина окна минус 10px
+    gtk_widget_set_size_request(entry, entry_width, -1);
+}
+
+
+class StartUI{
+    GtkWidget* window(){
+        // Создаем окно
+        GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_title(GTK_WINDOW(window), "Простой калькулятор");
+        gtk_container_set_border_width(GTK_CONTAINER(window), 10);
+        gtk_widget_set_size_request(window, 200, 200);
+
+        // Инициализируем генератор случайных чисел текущим временем
+        std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+        //Рандомайзер для фона окна
+        vector<std::string> fons_calor = {"#99FF18", "#FFF818", "#FFA918", "#FF6618", "#FF2018", "#FF1493", "#FF18C9", "#CB18FF", "#9118FF", "#5C18FF", "#1F75FE", "#00BFFF", "#18FFE5", "#00FA9A", "#00FF00", "#7FFF00", "#CEFF1D"};
+
+        int randomNumber_1, randomNumber_2;
+        randomNumber_1 = std::rand() % fons_calor.size();
+        do {
+            randomNumber_2 = std::rand() % fons_calor.size();
+        } while (randomNumber_2 == randomNumber_1);
+        //Генерируем cssзапрос
+        std::string css_1 = "window { background: linear-gradient(to bottom right, " + fons_calor[randomNumber_1] + ", " + fons_calor[randomNumber_2] + ");}";
+
+        const gchar* css_data = css_1.c_str();
+
+        // Устанавливаем CSS для фона окна
+        GtkCssProvider *cssProvider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(cssProvider, css_data, -1, NULL);
+        gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+        return window;
+    }
+
+    GtkWidget* entry(){
+        // Создаем GtkEntry для отображения ввода
+        GtkWidget *entry = gtk_entry_new();
+        gtk_entry_set_alignment(GTK_ENTRY(entry), 1); // Выравнивание по правому краю
+        gtk_entry_set_text(GTK_ENTRY(entry), "");
+        gtk_editable_set_editable(GTK_EDITABLE(entry), FALSE); // Не редактируемый
+        gtk_grid_attach(GTK_GRID(grid), entry, 0, 0, 4, 1);
+    }
+
+    GtkWidget* keybord(){
+        // Создаем Grid для размещения виджетов
+        GtkWidget *grid = gtk_grid_new();
+        gtk_container_add(GTK_CONTAINER(window), grid);
+
+    }
+
+    GtkWidget* buttons(){
+        // Создаем Grid для размещения виджетов
+        GtkWidget *grid = gtk_grid_new();
+        gtk_container_add(GTK_CONTAINER(window), grid);
+
+        // Массив с названиями кнопок калькулятора
+        const gchar *button_labels[] = {
+            "(", ")", "!", "%",
+            "7", "8", "9", "/",
+            "4", "5", "6", "*",
+            "1", "2", "3", "-",
+            "0", ".", "=", "+",
+            "C", "CE", "00", "000",
+            "sin", "cos", "ctg", "tg"
+        };
+
+        // Создаем кнопки и присоединяем к ним функцию button_clicked
+        for (int i = 0; i < 28; ++i) {
+            GtkWidget *button = create_custom_button(button_labels[i]);
+            g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), entry);
+            gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
+        }
+    }
+
+    void start (){
+        GtkWidget *window = this->window();
+        GtkWidget *entry = this->entry();
+        GtkWidget *keybord = this->keybord();
+
+
+        //--------
+
+
+        // Выравнивание текста по центру
+
+
+        // Сигнал realize для окна, чтобы установить размеры entry после отображения окна
+        g_signal_connect(window, "realize", G_CALLBACK(on_window_realize), entry);
+
+        //---------
+
+        // Установка глобальной переменной global_entry
+        global_entry = entry;
+
+
+    }
+};
+
 int main(int argc, char *argv[]) {
     // Инициализация GTK
     gtk_init(&argc, &argv);
 
+    StartUI start;
+    start.start()
 
 
 
 
-    // Создаем окно
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Простой калькулятор");
-    gtk_container_set_border_width(GTK_CONTAINER(window), 10);
-    gtk_widget_set_size_request(window, 200, 200);
-
-    // Инициализируем генератор случайных чисел текущим временем
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-    //Рандомайзер для фона окна
-    vector<std::string> fons_calor = {"#99FF18", "#FFF818", "#FFA918", "#FF6618", "#FF2018", "#FF1493", "#FF18C9", "#CB18FF", "#9118FF", "#5C18FF", "#1F75FE", "#00BFFF", "#18FFE5", "#00FA9A", "#00FF00", "#7FFF00", "#CEFF1D"};
-
-    int randomNumber_1, randomNumber_2;
-    randomNumber_1 = std::rand() % fons_calor.size();
-    do {
-        randomNumber_2 = std::rand() % fons_calor.size();
-    } while (randomNumber_2 == randomNumber_1);
-    //Генерируем cssзапрос
-    std::string css_1 = "window { background: linear-gradient(to bottom right, " + fons_calor[randomNumber_1] + ", " + fons_calor[randomNumber_2] + ");}";
-
-    const gchar* css_data = css_1.c_str();
-
-    // Устанавливаем CSS для фона окна
-    GtkCssProvider *cssProvider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(cssProvider, css_data, -1, NULL);
-    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-    // Создаем Grid для размещения виджетов
-    GtkWidget *grid = gtk_grid_new();
-    gtk_container_add(GTK_CONTAINER(window), grid);
-
-    // Создаем GtkEntry для отображения ввода
-    GtkWidget *entry = gtk_entry_new();
-    gtk_entry_set_alignment(GTK_ENTRY(entry), 1); // Выравнивание по правому краю
-    gtk_entry_set_text(GTK_ENTRY(entry), "");
-    gtk_editable_set_editable(GTK_EDITABLE(entry), FALSE); // Не редактируемый
-    gtk_grid_attach(GTK_GRID(grid), entry, 0, 0, 4, 1);
-
-    // Установка глобальной переменной global_entry
-    global_entry = entry;
-
-    // Массив с названиями кнопок калькулятора
-    const gchar *button_labels[] = {
-        "(", ")", "!", "%",
-        "7", "8", "9", "/",
-        "4", "5", "6", "*",
-        "1", "2", "3", "-",
-        "0", ".", "=", "+",
-        "C", "CE", "00", "000",
-        "sin", "cos", "ctg", "tg"
-    };
-
-    // Создаем кнопки и присоединяем к ним функцию button_clicked
-    for (int i = 0; i < 28; ++i) {
-        GtkWidget *button = create_custom_button(button_labels[i]);
-        g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), entry);
-        gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
-    }
 
     // Устанавливаем обработчик закрытия окна
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
