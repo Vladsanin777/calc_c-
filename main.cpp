@@ -22,10 +22,12 @@ struct Type_list_entry_container {
 };
 
 // Глобальная переменная для хранения 3 указателя на GtkEntry
-Type_list_entry_container list_entry_container;
+Type_list_entry_container *list_entry_container;
 
 //Окно
-GtkWindow *window;
+GtkWidget *window;
+//Основной grid
+GtkWidget *main_grid;
 
 // Объявление глобальной переменной для хранения предыдущего цвета обводки
 static GdkRGBA previous_color;
@@ -72,7 +74,7 @@ private:
 public:
     //  Функция вызываемая при арифметической ошибке
     void red_table() {
-        if (global_entry == NULL) {
+        if (list_entry_container->entry == NULL) {
             g_print("Error: No GtkEntry provided for animation.\n");
             return;
         }
@@ -83,13 +85,13 @@ public:
         // Создание анимации с использованием CSS
         GtkCssProvider *provider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: red; transition: border-color 1s ease-in-out; }", -1, NULL);
-        gtk_style_context_add_provider(gtk_widget_get_style_context(global_entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+        gtk_style_context_add_provider(gtk_widget_get_style_context(list_entry_container->entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
         g_object_unref(provider); // освобождаем ресурсы
 
         // Установка таймера на возврат к предыдущему цвету обводки через 2000 миллисекунд (две секунды)
-        g_timeout_add(2000, (GSourceFunc)reset_border_color, global_entry);
+        g_timeout_add(2000, (GSourceFunc)reset_border_color, list_entry_container->entry);
         // Вызываем функцию перемещения через определенные интервалы времени
-        g_timeout_add(300, move_widget, global_entry); // Вызываем статический метод
+        g_timeout_add(300, move_widget, list_entry_container->entry); // Вызываем статический метод
     }
 };
 
@@ -438,27 +440,16 @@ public:
         gtk_entry_set_text(GTK_ENTRY(entry), entry_string.c_str());
     }
 
-
-/*
-    void on_window_realize(GtkWidget *widget, gpointer data) {
-        GtkWidget *entry = GTK_WIDGET(data);
-
-        // Получаем размеры окна и устанавливаем ширину entry
-        int window_width;
-        gtk_window_get_size(GTK_WINDOW(widget), &window_width, NULL);
-        int entry_width = window_width - 10; // Ширина окна минус 10px
-        gtk_widget_set_size_request(entry, entry_width, -1);
-    }*/
 };
 
 class StartUI{
 private:
-    GtkWidget* window_s(){
+    void window_s(){
         // Создаем окно
-        GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_title(GTK_WINDOW(window), "Простой калькулятор");
-        gtk_container_set_border_width(GTK_CONTAINER(window), 10);
-        gtk_widget_set_size_request(window, 200, 200);
+        GtkWidget *window_s = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_title(GTK_WINDOW(window_s), "Простой калькулятор");
+        gtk_container_set_border_width(GTK_CONTAINER(window_s), 10);
+        gtk_widget_set_size_request(window_s, 200, 200);
 
         // Инициализируем генератор случайных чисел текущим временем
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -482,27 +473,32 @@ private:
         gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         // Установка глобальной переменной window
-        window = return window;
+        window = window_s;
     }
 
     // Создаем Grid прикреплённый к окну или другому элементу
-    GtkWidget* new_grid(GtkWidget *window_or_element){
+    void main_grid_s(GtkWidget* &window){
         GtkWidget *grid = gtk_grid_new();
-        gtk_container_add(GTK_CONTAINER(window_or_element), grid);
+        gtk_container_add(GTK_CONTAINER(window), grid);
+        main_grid = grid;
     }
 
-    // Установка глобальной переменной entry
+    // Установка глобальной переменной list_entry_container
     void entry(){
-        GtkWidget *grid_1 = new_grid(window);
-        GtkWidget *grid_2 = new_grid(grid_1)
+        GtkWidget *grid_1 = gtk_grid_new();
+        gtk_grid_attach(GTK_GRID(main_grid), grid_1, 0, 0, 4, 1);
+        GtkWidget *grid_2 = gtk_grid_new();
+        gtk_grid_attach(GTK_GRID(grid_1), grid_2, 0, 0, 4, 1);
         // Создаем GtkEntry для отображения ввода
-        GtkWidget *entry = gtk_entry_new();
+        GtkWidget* entry = gtk_entry_new();
         gtk_entry_set_alignment(GTK_ENTRY(entry), 1); // Выравнивание по правому краю
-        gtk_entry_set_text(GTK_ENTRY(entry), "");
+        gtk_entry_set_text(GTK_ENTRY(entry), "0");
         gtk_editable_set_editable(GTK_EDITABLE(entry), FALSE); // Не редактируемый
         gtk_grid_attach(GTK_GRID(grid_2), entry, 0, 0, 4, 1);
-        grid_1
-        list_entry_container = {grid_1, grid_2, entry};
+
+        Type_list_entry_container container = {grid_1, grid_2, entry};
+
+        list_entry_container = &container;
     }
 
     // Функция для создания кастомных кнопок с прозрачным фоном
@@ -512,10 +508,11 @@ private:
         return button;
     }
 
-    GtkWidget* keybord(){
+    void keybord(){
         // Создаем Grid для размещения виджетов
-        GtkWidget *grid = this->new_grid(window)
-
+        GtkWidget* grid = gtk_grid_new();
+        gtk_grid_attach(GTK_GRID(main_grid), grid, 0, 2, 4, 1);
+        gtk_container_set_border_width(GTK_CONTAINER(grid), 10);
         // Массив с названиями кнопок калькулятора
         const gchar *button_labels[] = {
             "(", ")", "!", "%",
@@ -529,33 +526,32 @@ private:
 
         // Создаем кнопки и присоединяем к ним функцию button_clicked
         for (int i = 0; i < 28; ++i) {
-            GtkWidget *button = this->create_custom_button(button_labels[i]);
-            g_signal_connect(button, "clicked", G_CALLBACK(ActivateUI::button_clicked), entry);
+            GtkWidget* button = this->create_custom_button(button_labels[i]);
+            g_signal_connect(button, "clicked", G_CALLBACK(ActivateUI::button_clicked), list_entry_container->entry);
             gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
         }
-
     }
-    void grid_style(GtkWidget *grid, int persent){
-        gchar css_style = ("* {text-align: center; width: " + to_string(persent) + "}").c_str();
+    void grid_style(GtkWidget *grid, int persent) {
+
+        std::string css_string = "* {text-align: center; width: " + std::to_string(persent) + "%}";
+        const gchar* css_style = css_string.c_str();
         GtkCssProvider *cssProvider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(cssProvider, css_style, -1, NULL);
-        gtk_style_context_add_provider_for_screen(gtk_widget_get_style_context(grid), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        gtk_style_context_add_provider_for_screen(gtk_widget_get_screen(grid), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
     void entry_style(){
-        this->grid_style(list_entry_container->grid_1, 100)
-        this->grid_style(list_entry_container->grid_2, 80)
+        //this->grid_style(list_entry_container->grid_1, 100);
+        //this->grid_style(list_entry_container->grid_2, 80);
     }
+
 public:
     void start(){
         this->window_s();
+        this->main_grid_s(window);
         this->entry();
         this->entry_style();
         // Создание клавиатуры
         this->keybord();
-
-
-        // Сигнал realize для окна, чтобы установить размеры entry после отображения окна
-        g_signal_connect(window, "realize", G_CALLBACK(on_window_realize), entry);
 
         // Устанавливаем обработчик закрытия окна
         g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
