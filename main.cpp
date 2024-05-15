@@ -7,6 +7,7 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 #include <utility> // для std::pair
 
 #include <cmath>
@@ -16,8 +17,15 @@
 
 using namespace std;
 
-// Глобальная переменная для хранения указателя на GtkEntry
-GtkWidget *global_entry = NULL;
+struct Type_list_entry_container {
+    GtkWidget *grid_1, *grid_2, *entry;
+};
+
+// Глобальная переменная для хранения 3 указателя на GtkEntry
+Type_list_entry_container list_entry_container;
+
+//Окно
+GtkWindow *window;
 
 // Объявление глобальной переменной для хранения предыдущего цвета обводки
 static GdkRGBA previous_color;
@@ -389,70 +397,63 @@ bool isOperator(char c) {
 }
 
 
+class ActivateUI{
+public:
+    // Функция, вызываемая при нажатии кнопок
+    static void button_clicked(GtkWidget *widget, gpointer data) {
+        // Получаем текст с кнопки
+        const gchar *text = gtk_button_get_label(GTK_BUTTON(widget));
+        // Получаем указатель на данные (это указатель на GtkEntry)
+        GtkWidget *entry = (GtkWidget *)data;
+        // Получаем текущий текст из GtkEntry
+        const gchar *entry_text = gtk_entry_get_text(GTK_ENTRY(entry));
+        // Преобразуем текст в строку
+        std::string entry_string(entry_text);
 
-// Функция, вызываемая при нажатии кнопок
-static void button_clicked(GtkWidget *widget, gpointer data) {
-    // Получаем текст с кнопки
-    const gchar *text = gtk_button_get_label(GTK_BUTTON(widget));
-    // Получаем указатель на данные (это указатель на GtkEntry)
-    GtkWidget *entry = (GtkWidget *)data;
-    // Получаем текущий текст из GtkEntry
-    const gchar *entry_text = gtk_entry_get_text(GTK_ENTRY(entry));
-    // Преобразуем текст в строку
-    std::string entry_string(entry_text);
-
-    // Проверяем, была ли нажата кнопка "="
-    if (std::string(text) == "=") {
-        Calculate cal;
-        std::string result = cal.calc(entry_string);
-        std::cout<<"kl"<<endl;
-        entry_string = result;
-    } else if (std::string(text) == "C") {
-        // Стираем один символ, если нажата кнопка "C"
-        if (!entry_string.empty())
-            entry_string.pop_back();
-    } else if (std::string(text) == "CE") {
-        // Стираем всё выражение, если нажата кнопка "CE"
-        entry_string = "";
-    } else if (std::string(text) == "!") {
-        // Вычисляем факториал, если нажата кнопка "!"
-        Factorial factor(entry_string);
-        entry_string = factor.factorial_1();
-    } else if (std::string(text) == "%") {
-        Percent per(entry_string);
-        entry_string = per.percent_1();
-    } else {
-        // Добавляем текст с кнопки к текущему тексту
-        entry_string += text;
+        // Проверяем, была ли нажата кнопка "="
+        if (std::string(text) == "=") {
+            Calculate cal;
+            std::string result = cal.calc(entry_string);
+            std::cout<<"kl"<<endl;
+            entry_string = result;
+        } else if (std::string(text) == "C") {
+            // Стираем один символ, если нажата кнопка "C"
+            if (!entry_string.empty())
+                entry_string.pop_back();
+        } else if (std::string(text) == "CE") {
+            // Стираем всё выражение, если нажата кнопка "CE"
+            entry_string = "";
+        } else if (std::string(text) == "!") {
+            // Вычисляем факториал, если нажата кнопка "!"
+            Factorial factor(entry_string);
+            entry_string = factor.factorial_1();
+        } else if (std::string(text) == "%") {
+            Percent per(entry_string);
+            entry_string = per.percent_1();
+        } else {
+            // Добавляем текст с кнопки к текущему тексту
+            entry_string += text;
+        }
+        // Устанавливаем новый текст в GtkEntry
+        gtk_entry_set_text(GTK_ENTRY(entry), entry_string.c_str());
     }
-    // Устанавливаем новый текст в GtkEntry
-    gtk_entry_set_text(GTK_ENTRY(entry), entry_string.c_str());
-}
-
-// Функция для создания кастомных кнопок с прозрачным фоном
-GtkWidget *create_custom_button(const gchar *label) {
-    GtkWidget *button = gtk_button_new_with_label(label);
-    gtk_widget_set_opacity(button, 0.7); // Устанавливаем прозрачность кнопки
-    return button;
-}
 
 
+/*
+    void on_window_realize(GtkWidget *widget, gpointer data) {
+        GtkWidget *entry = GTK_WIDGET(data);
 
-
-
-void on_window_realize(GtkWidget *widget, gpointer data) {
-    GtkWidget *entry = GTK_WIDGET(data);
-
-    // Получаем размеры окна и устанавливаем ширину entry
-    int window_width;
-    gtk_window_get_size(GTK_WINDOW(widget), &window_width, NULL);
-    int entry_width = window_width - 10; // Ширина окна минус 10px
-    gtk_widget_set_size_request(entry, entry_width, -1);
-}
-
+        // Получаем размеры окна и устанавливаем ширину entry
+        int window_width;
+        gtk_window_get_size(GTK_WINDOW(widget), &window_width, NULL);
+        int entry_width = window_width - 10; // Ширина окна минус 10px
+        gtk_widget_set_size_request(entry, entry_width, -1);
+    }*/
+};
 
 class StartUI{
-    GtkWidget* window(){
+private:
+    GtkWidget* window_s(){
         // Создаем окно
         GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_title(GTK_WINDOW(window), "Простой калькулятор");
@@ -480,29 +481,40 @@ class StartUI{
         gtk_css_provider_load_from_data(cssProvider, css_data, -1, NULL);
         gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        return window;
+        // Установка глобальной переменной window
+        window = return window;
     }
 
-    GtkWidget* entry(){
+    // Создаем Grid прикреплённый к окну или другому элементу
+    GtkWidget* new_grid(GtkWidget *window_or_element){
+        GtkWidget *grid = gtk_grid_new();
+        gtk_container_add(GTK_CONTAINER(window_or_element), grid);
+    }
+
+    // Установка глобальной переменной entry
+    void entry(){
+        GtkWidget *grid_1 = new_grid(window);
+        GtkWidget *grid_2 = new_grid(grid_1)
         // Создаем GtkEntry для отображения ввода
         GtkWidget *entry = gtk_entry_new();
         gtk_entry_set_alignment(GTK_ENTRY(entry), 1); // Выравнивание по правому краю
         gtk_entry_set_text(GTK_ENTRY(entry), "");
         gtk_editable_set_editable(GTK_EDITABLE(entry), FALSE); // Не редактируемый
-        gtk_grid_attach(GTK_GRID(grid), entry, 0, 0, 4, 1);
+        gtk_grid_attach(GTK_GRID(grid_2), entry, 0, 0, 4, 1);
+        grid_1
+        list_entry_container = {grid_1, grid_2, entry};
+    }
+
+    // Функция для создания кастомных кнопок с прозрачным фоном
+    GtkWidget *create_custom_button(const gchar *label) {
+        GtkWidget *button = gtk_button_new_with_label(label);
+        gtk_widget_set_opacity(button, 0.7); // Устанавливаем прозрачность кнопки
+        return button;
     }
 
     GtkWidget* keybord(){
         // Создаем Grid для размещения виджетов
-        GtkWidget *grid = gtk_grid_new();
-        gtk_container_add(GTK_CONTAINER(window), grid);
-
-    }
-
-    GtkWidget* buttons(){
-        // Создаем Grid для размещения виджетов
-        GtkWidget *grid = gtk_grid_new();
-        gtk_container_add(GTK_CONTAINER(window), grid);
+        GtkWidget *grid = this->new_grid(window)
 
         // Массив с названиями кнопок калькулятора
         const gchar *button_labels[] = {
@@ -517,33 +529,42 @@ class StartUI{
 
         // Создаем кнопки и присоединяем к ним функцию button_clicked
         for (int i = 0; i < 28; ++i) {
-            GtkWidget *button = create_custom_button(button_labels[i]);
-            g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), entry);
+            GtkWidget *button = this->create_custom_button(button_labels[i]);
+            g_signal_connect(button, "clicked", G_CALLBACK(ActivateUI::button_clicked), entry);
             gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
         }
+
     }
-
-    void start (){
-        GtkWidget *window = this->window();
-        GtkWidget *entry = this->entry();
-        GtkWidget *keybord = this->keybord();
-
-
-        //--------
-
-
-        // Выравнивание текста по центру
+    void grid_style(GtkWidget *grid, int persent){
+        gchar css_style = ("* {text-align: center; width: " + to_string(persent) + "}").c_str();
+        GtkCssProvider *cssProvider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(cssProvider, css_style, -1, NULL);
+        gtk_style_context_add_provider_for_screen(gtk_widget_get_style_context(grid), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
+    void entry_style(){
+        this->grid_style(list_entry_container->grid_1, 100)
+        this->grid_style(list_entry_container->grid_2, 80)
+    }
+public:
+    void start(){
+        this->window_s();
+        this->entry();
+        this->entry_style();
+        // Создание клавиатуры
+        this->keybord();
 
 
         // Сигнал realize для окна, чтобы установить размеры entry после отображения окна
         g_signal_connect(window, "realize", G_CALLBACK(on_window_realize), entry);
 
-        //---------
+        // Устанавливаем обработчик закрытия окна
+        g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-        // Установка глобальной переменной global_entry
-        global_entry = entry;
+        // Показываем все виджеты
+        gtk_widget_show_all(window);
 
-
+        // Запускаем цикл обработки событий GTK
+        gtk_main();
     }
 };
 
@@ -552,20 +573,7 @@ int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
     StartUI start;
-    start.start()
-
-
-
-
-
-    // Устанавливаем обработчик закрытия окна
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    // Показываем все виджеты
-    gtk_widget_show_all(window);
-
-    // Запускаем цикл обработки событий GTK
-    gtk_main();
+    start.start();
 
     return 0;
 }
