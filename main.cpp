@@ -154,6 +154,18 @@ void pprint(std::vector <std::vector<int>> nestedVector ){
     }
 }
 
+
+// Пользовательское исключение для деления на ноль
+class DivisionByZeroException : public std::runtime_error {
+public:
+    DivisionByZeroException() : std::runtime_error("Error: Division by zero") {
+        ErrorCalc err;
+        err.red_table();
+    }
+};
+
+
+
 class Calculate {
 private:
     // Метод подсчёта скобок
@@ -233,7 +245,7 @@ private:
                         if (num != 0) {
                             result /= num;
                         } else {
-                            return "Деление на ноль";
+                            throw DivisionByZeroException();
                         }
                         break;
                 }
@@ -243,19 +255,29 @@ private:
     }
 
 public:
+    std::string removing_zeros(std::string expression){
+        for (int i = size(expression) - 1; expression[i] == '0' || expression[i] == ',';i--) expression.pop_back();
+        return expression;
+    }
+
     // Основной метод калькулятора
     std::string calc(const std::string &expression) {
-        if (!equality_of_two_numbers(counting_parentheses(expression))) {
-            return "Неравное количество скобок!";
+        try{
+            if (!equality_of_two_numbers(counting_parentheses(expression))) {
+                return "Неравное количество скобок!";
+            }
+            std::string expression_1 = expression;
+            while (counting_parentheses(expression_1)[0] != 0) {
+                std::vector<int> priority_brackets = searching_for_priority_brackets(expression_1, counting_parentheses(expression_1)[0]);
+                expression_1 = expression_1.substr(0, priority_brackets[0]) +
+                calculate_expression(tokenize(expression_1.substr(priority_brackets[0] + 1, priority_brackets[1] - priority_brackets[0] - 1))) +
+                expression_1.substr(priority_brackets[1] + 1);
+            }
+            return removing_zeros(calculate_expression(tokenize(expression_1)));
+        } catch (const DivisionByZeroException &e) {
+            std::cout<<e.what()<<std::endl;
+            return expression;
         }
-        std::string expression_1 = expression;
-        while (counting_parentheses(expression_1)[0] != 0) {
-            std::vector<int> priority_brackets = searching_for_priority_brackets(expression_1, counting_parentheses(expression_1)[0]);
-            expression_1 = expression_1.substr(0, priority_brackets[0]) +
-            calculate_expression(tokenize(expression_1.substr(priority_brackets[0] + 1, priority_brackets[1] - priority_brackets[0] - 1))) +
-            expression_1.substr(priority_brackets[1] + 1);
-        }
-        return calculate_expression(tokenize(expression_1));
     }
 };
 
@@ -394,14 +416,25 @@ public:
 
 
 
-bool isOperator(char c) {
-    return c == '+' || c == '-' || c == '*' || c == '/';
-}
 
 
-class ActivateUI{
-public:
-    // Функция, вызываемая при нажатии кнопок
+
+
+class StartUI {
+private:
+
+    // Обработчик сигнала изменения размера окна
+    static void on_size_allocate(GtkWidget *widget, GdkRectangle *allocation, gpointer data) {
+        GtkCssProvider *provider = GTK_CSS_PROVIDER(data);
+
+        const char *css = (allocation->height > 660) ? "* {font-size: 35px;}" : "* {font-size: 20px;}";
+        gtk_css_provider_load_from_data(provider, css, -1, NULL);
+
+        GtkStyleContext *context = gtk_widget_get_style_context(widget);
+        gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
+
+
     static void button_clicked(GtkWidget *widget, gpointer data) {
         // Получаем текст с кнопки
         const gchar *text = gtk_button_get_label(GTK_BUTTON(widget));
@@ -411,6 +444,7 @@ public:
         const gchar *entry_text = gtk_entry_get_text(GTK_ENTRY(entry));
         // Преобразуем текст в строку
         std::string entry_string(entry_text);
+        if (entry_string == "0" && std::string(",+*/").find(text) == std::string::npos) entry_string.clear();
 
         // Проверяем, была ли нажата кнопка "="
         if (std::string(text) == "=") {
@@ -424,7 +458,7 @@ public:
                 entry_string.pop_back();
         } else if (std::string(text) == "CE") {
             // Стираем всё выражение, если нажата кнопка "CE"
-            entry_string = "";
+            entry_string = "0";
         } else if (std::string(text) == "!") {
             // Вычисляем факториал, если нажата кнопка "!"
             Factorial factor(entry_string);
@@ -440,29 +474,25 @@ public:
         gtk_entry_set_text(GTK_ENTRY(entry), entry_string.c_str());
     }
 
-};
-
-class StartUI{
-private:
-    void window_s(){
+    void window_s() {
         // Создаем окно
-        GtkWidget *window_s = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        gtk_window_set_title(GTK_WINDOW(window_s), "Простой калькулятор");
-        gtk_container_set_border_width(GTK_CONTAINER(window_s), 10);
-        gtk_widget_set_size_request(window_s, 200, 200);
+        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_title(GTK_WINDOW(window), "Калькулятор");
+        gtk_widget_set_size_request(window, 100, 500);
 
         // Инициализируем генератор случайных чисел текущим временем
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-        //Рандомайзер для фона окна
-        vector<std::string> fons_calor = {"#99FF18", "#FFF818", "#FFA918", "#FF6618", "#FF2018", "#FF1493", "#FF18C9", "#CB18FF", "#9118FF", "#5C18FF", "#1F75FE", "#00BFFF", "#18FFE5", "#00FA9A", "#00FF00", "#7FFF00", "#CEFF1D"};
+        // Рандомайзер для фона окна
+        std::vector<std::string> fons_calor = {"#99FF18", "#FFF818", "#FFA918", "#FF6618", "#FF2018", "#FF1493", "#FF18C9", "#CB18FF", "#9118FF", "#5C18FF", "#1F75FE", "#00BFFF", "#18FFE5", "#00FA9A", "#00FF00", "#7FFF00", "#CEFF1D"};
 
         int randomNumber_1, randomNumber_2;
         randomNumber_1 = std::rand() % fons_calor.size();
         do {
             randomNumber_2 = std::rand() % fons_calor.size();
         } while (randomNumber_2 == randomNumber_1);
-        //Генерируем cssзапрос
+
+        // Генерируем CSS-запрос
         std::string css_1 = "window { background: linear-gradient(to bottom right, " + fons_calor[randomNumber_1] + ", " + fons_calor[randomNumber_2] + ");}";
 
         const gchar* css_data = css_1.c_str();
@@ -471,101 +501,98 @@ private:
         GtkCssProvider *cssProvider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(cssProvider, css_data, -1, NULL);
         gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-        // Установка глобальной переменной window
-        window = window_s;
     }
 
-    // Создаем Grid прикреплённый к окну или другому элементу
-    void main_grid_s(GtkWidget* &window){
-        GtkWidget *grid = gtk_grid_new();
-        gtk_container_add(GTK_CONTAINER(window), grid);
-        main_grid = grid;
+    void main_grid_s() {
+        main_grid = gtk_grid_new();
+        gtk_container_add(GTK_CONTAINER(window), main_grid);
+        gtk_container_set_border_width(GTK_CONTAINER(main_grid), 10);
+        gtk_widget_set_hexpand(main_grid, TRUE);
+        gtk_widget_set_vexpand(main_grid, TRUE);
     }
 
-    // Установка глобальной переменной list_entry_container
-    void entry(){
+    void entry() {
         GtkWidget *grid_1 = gtk_grid_new();
         gtk_grid_attach(GTK_GRID(main_grid), grid_1, 0, 0, 4, 1);
+        gtk_widget_set_hexpand(grid_1, TRUE); // Растяжение по горизонтали
+        gtk_widget_set_vexpand(grid_1, TRUE); // Не растягивать по вертикали
+
+
+        // Создаем CSS-провайдер
+        GtkCssProvider *provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider, "grid { border-bottom: 10px solid rgba(0, 0, 0, 0); }", -1, NULL);
+
+        // Применяем CSS-провайдер к GtkGrid
+        GtkStyleContext *context = gtk_widget_get_style_context(grid_1);
+        gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+
         GtkWidget *grid_2 = gtk_grid_new();
-        gtk_grid_attach(GTK_GRID(grid_1), grid_2, 0, 0, 4, 1);
+        gtk_grid_attach(GTK_GRID(grid_1), grid_2, 0, 0, 1, 1);
+        gtk_widget_set_hexpand(grid_2, TRUE); // Растяжение по горизонтали
+        gtk_widget_set_vexpand(grid_2, TRUE); // Не растягивать по вертикали
+
         // Создаем GtkEntry для отображения ввода
         GtkWidget* entry = gtk_entry_new();
         gtk_entry_set_alignment(GTK_ENTRY(entry), 1); // Выравнивание по правому краю
         gtk_entry_set_text(GTK_ENTRY(entry), "0");
         gtk_editable_set_editable(GTK_EDITABLE(entry), FALSE); // Не редактируемый
-        gtk_grid_attach(GTK_GRID(grid_2), entry, 0, 0, 4, 1);
+        gtk_grid_attach(GTK_GRID(grid_2), entry, 0, 0, 1, 1);
+        gtk_widget_set_hexpand(entry, TRUE); // Растяжение по горизонтали
+        gtk_widget_set_vexpand(entry, TRUE); // Растяжение по вертикали
 
-        Type_list_entry_container container = {grid_1, grid_2, entry};
-
-        list_entry_container = &container;
+        list_entry_container = new Type_list_entry_container{grid_1, grid_2, entry};
     }
 
-    // Функция для создания кастомных кнопок с прозрачным фоном
     GtkWidget *create_custom_button(const gchar *label) {
         GtkWidget *button = gtk_button_new_with_label(label);
+        gtk_widget_set_hexpand(button, TRUE); // Кнопки растягиваются по горизонтали
+        gtk_widget_set_vexpand(button, TRUE); // Кнопки растягиваются по вертикали
         gtk_widget_set_opacity(button, 0.7); // Устанавливаем прозрачность кнопки
         return button;
     }
 
-    void keybord(){
-        // Создаем Grid для размещения виджетов
-        GtkWidget* grid = gtk_grid_new();
-        gtk_grid_attach(GTK_GRID(main_grid), grid, 0, 2, 4, 1);
-        gtk_container_set_border_width(GTK_CONTAINER(grid), 10);
-        // Массив с названиями кнопок калькулятора
+    void keybord() {
         const gchar *button_labels[] = {
             "(", ")", "!", "%",
             "7", "8", "9", "/",
             "4", "5", "6", "*",
             "1", "2", "3", "-",
-            "0", ".", "=", "+",
+            "0", ",", "=", "+",
             "C", "CE", "00", "000",
             "sin", "cos", "ctg", "tg"
         };
 
-        // Создаем кнопки и присоединяем к ним функцию button_clicked
         for (int i = 0; i < 28; ++i) {
-            GtkWidget* button = this->create_custom_button(button_labels[i]);
-            g_signal_connect(button, "clicked", G_CALLBACK(ActivateUI::button_clicked), list_entry_container->entry);
-            gtk_grid_attach(GTK_GRID(grid), button, i % 4, i / 4 + 1, 1, 1);
+            GtkWidget* button = create_custom_button(button_labels[i]);
+            g_signal_connect(button, "clicked", G_CALLBACK(button_clicked), list_entry_container->entry);
+            gtk_grid_attach(GTK_GRID(main_grid), button, i % 4, i / 4 + 1, 1, 1);
         }
-    }
-    void grid_style(GtkWidget *grid, int persent) {
-
-        std::string css_string = "* {text-align: center; width: " + std::to_string(persent) + "%}";
-        const gchar* css_style = css_string.c_str();
-        GtkCssProvider *cssProvider = gtk_css_provider_new();
-        gtk_css_provider_load_from_data(cssProvider, css_style, -1, NULL);
-        gtk_style_context_add_provider_for_screen(gtk_widget_get_screen(grid), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    }
-    void entry_style(){
-        //this->grid_style(list_entry_container->grid_1, 100);
-        //this->grid_style(list_entry_container->grid_2, 80);
     }
 
 public:
-    void start(){
-        this->window_s();
-        this->main_grid_s(window);
-        this->entry();
-        this->entry_style();
-        // Создание клавиатуры
-        this->keybord();
+    void start() {
+        window_s();
+        main_grid_s();
+        entry();
+        keybord();
 
-        // Устанавливаем обработчик закрытия окна
         g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-        // Показываем все виджеты
+        // Создание CSS провайдера
+        GtkCssProvider *provider = gtk_css_provider_new();
+
+        // Подключение обработчика сигнала изменения размера окна
+        g_signal_connect(window, "size-allocate", G_CALLBACK(on_size_allocate), provider);
+
+
         gtk_widget_show_all(window);
 
-        // Запускаем цикл обработки событий GTK
         gtk_main();
     }
 };
 
 int main(int argc, char *argv[]) {
-    // Инициализация GTK
     gtk_init(&argc, &argv);
 
     StartUI start;
