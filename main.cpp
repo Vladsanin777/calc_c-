@@ -66,7 +66,7 @@ private:
     static gboolean reset_border_color(gpointer data) {
         GtkWidget *widget = GTK_WIDGET(data);
         GtkCssProvider *provider = gtk_css_provider_new();
-        gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: rgba(0,0,0,0); transition: border-color 1s ease-in-out; }", -1, NULL);
+        gtk_css_provider_load_from_data(provider, "entry { background-color: rgba(0,0,0,0.1);}", -1, NULL);
         gtk_style_context_add_provider(gtk_widget_get_style_context(widget), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
         g_object_unref(provider); // освобождаем ресурсы
         return G_SOURCE_REMOVE;
@@ -79,13 +79,9 @@ public:
             g_print("Error: No GtkEntry provided for animation.\n");
             return;
         }
-
-        GdkRGBA color;
-        gdk_rgba_parse(&color, "red");
-
         // Создание анимации с использованием CSS
         GtkCssProvider *provider = gtk_css_provider_new();
-        gtk_css_provider_load_from_data(provider, "* { border-style: solid; border-width: 3px; border-color: red; transition: border-color 1s ease-in-out; }", -1, NULL);
+        gtk_css_provider_load_from_data(provider, "entry { background-color: red;}", -1, NULL);
         gtk_style_context_add_provider(gtk_widget_get_style_context(list_entry_container->entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
         g_object_unref(provider); // освобождаем ресурсы
 
@@ -160,6 +156,15 @@ void pprint(std::vector <std::vector<int>> nestedVector ){
 class DivisionByZeroException : public std::runtime_error {
 public:
     DivisionByZeroException() : std::runtime_error("Error: Division by zero") {
+        ErrorCalc err;
+        err.red_table();
+    }
+};
+
+// Пользовательское исключение для неравного количества скобок
+class UnequalNumberOfParenthesesException : public std::runtime_error {
+public:
+    UnequalNumberOfParenthesesException() : std::runtime_error("Error: Unequal Number Of Parentheses") {
         ErrorCalc err;
         err.red_table();
     }
@@ -268,7 +273,7 @@ public:
     std::string calc(const std::string &expression) {
         try{
             if (!equality_of_two_numbers(counting_parentheses(expression))) {
-                return "Неравное количество скобок!";
+                throw UnequalNumberOfParenthesesException();
             }
             std::string expression_1 = expression;
             while (counting_parentheses(expression_1)[0] != 0) {
@@ -278,7 +283,7 @@ public:
                 expression_1.substr(priority_brackets[1] + 1);
             }
             return removing_zeros(calculate_expression(tokenize(expression_1)));
-        } catch (const DivisionByZeroException &e) {
+        } catch (const std::exception &e) {
             std::cout<<e.what()<<std::endl;
             return expression;
         }
@@ -437,11 +442,6 @@ public:
 };
 
 
-
-
-
-
-
 class StartUI {
 private:
 
@@ -562,6 +562,10 @@ private:
         gtk_grid_attach(GTK_GRID(grid_2), entry, 0, 0, 1, 1);
         gtk_widget_set_hexpand(entry, TRUE); // Растяжение по горизонтали
         gtk_widget_set_vexpand(entry, TRUE); // Растяжение по вертикали
+
+        provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider, "entry { background-color: rgba(0,0,0,0.1);}", -1, NULL);
+        gtk_style_context_add_provider(gtk_widget_get_style_context(entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
 
         list_entry_container = new Type_list_entry_container{grid_1, grid_2, entry};
     }
