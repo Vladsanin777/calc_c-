@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <utility> // для std::pair
+#include <cmath>
 
 #include <cmath>
 #include <sstream>
@@ -224,7 +225,7 @@ private:
         char last_operator = '+';
         for (size_t i = 1; i < tokens.size(); ++i) {
             const std::string &token = tokens[i];
-            if (token == "+" || token == "-" || token == "*" || token == "/") {
+            if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
                 last_operator = token[0];
             } else {
                 double num = std::stod(token);
@@ -248,6 +249,9 @@ private:
                             throw DivisionByZeroException();
                         }
                         break;
+                    case '^':
+                        result = std::pow(result, num);
+                        break;
                 }
             }
         }
@@ -257,7 +261,7 @@ private:
 public:
     std::string removing_zeros(std::string expression){
         for (int i = size(expression) - 1; expression[i] == '0' || expression[i] == ',';i--) expression.pop_back();
-        return expression;
+        return expression.empty()? "0" : expression;
     }
 
     // Основной метод калькулятора
@@ -286,24 +290,62 @@ public:
 class Percent : public Calculate {
 private:
     std::string entry_string;
-public:
-    Percent(std::string expression) : entry_string(expression) {}
-    std::string percent_1() {
+
+    const std::string operators_4 = "+-/*";
+
+    std::string computeResult(char priority_operator, const std::string& kl) {
+        const std::string opres = "/*";
         std::string result;
 
-        char priority_operator = '*';
-        size_t num_priority_operator = entry_string.size() - 1;
-        std::string kl, kl_1;
+        if (opres.find(priority_operator) != std::string::npos) {
+            result = std::to_string(std::stod(kl) / 100);
+        } else {
+            std::string kl_1;
 
-        const std::string operators = "+-/*";
+            if (entry_string.back() == ')') {
+                int level = 1;
+                short close_brackets = 0;
 
-        // Check if the expression ends with a closing bracket
+                for (int i = entry_string.size() - 2; i >= 0 && level > 0; --i) {
+                    if (entry_string[i] == ')') {
+                        level++;
+                    } else if (entry_string[i] == '(') {
+                        level--;
+                        close_brackets = i;
+                    }
+                }
+
+                if (entry_string[close_brackets - 1] == '-' && operators_4.find(entry_string[close_brackets - 2]) != std::string::npos)
+                    close_brackets--;
+
+                kl_1 = this->calc(entry_string.substr(close_brackets));
+            } else {
+                for (int i = entry_string.size() - 1; i >= 0; --i) {
+                    if (operators_4.find(entry_string[i]) != std::string::npos) {
+                        kl_1 = (entry_string[i] == '-' && operators_4.find(entry_string[i - 1]) != std::string::npos)
+                        ? entry_string.substr(i)
+                        : entry_string.substr(i + 1);
+                        break;
+                    }
+                }
+                if (kl_1.empty()) kl_1 = entry_string;
+            }
+
+            result = std::to_string(std::stod(kl_1) / 100 * std::stod(kl));
+        }
+        return removing_zeros(entry_string + priority_operator + result);
+    }
+
+public:
+    Percent(const std::string& expression) : entry_string(expression) {}
+
+    std::string percent_1() {
+
         if (entry_string.back() == ')') {
             int level = 1;
-            size_t close_brackets = 0;
+            short close_brackets = 0;
 
-            // Find the corresponding opening bracket
-            for (int i = entry_string.size() - 2; level > 0; i--) {
+            for (int i = entry_string.size() - 2; i >= 0 && level > 0; --i) {
                 if (entry_string[i] == ')') {
                     level++;
                 } else if (entry_string[i] == '(') {
@@ -312,51 +354,31 @@ public:
                 }
             }
 
-            // Adjust close_brackets if the previous character is '-' and an operator
-            if (entry_string[close_brackets - 1] == '-' && operators.find(entry_string[close_brackets - 2]) != std::string::npos) {
+            if (entry_string[close_brackets - 1] == '-' && operators_4.find(entry_string[close_brackets - 2]) != std::string::npos)
                 close_brackets--;
-            }
 
-            kl = this->calc(entry_string.substr(close_brackets));
-            num_priority_operator = close_brackets - 1;
-            priority_operator = entry_string[num_priority_operator];
+            std::string kl = this->calc(entry_string.substr(close_brackets));
+            char priority_operator = entry_string[close_brackets - 1];
+            entry_string = entry_string.substr(0, close_brackets - 1);
+
+            return computeResult(priority_operator, kl);
         } else {
-            // Find the last operator in the expression
-            for (int i = entry_string.size() - 1; i > 0; i--) {
-                if (operators.find(entry_string[i]) != std::string::npos) {
-                    if (entry_string[i] == '-' && operators.find(entry_string[i - 1]) != std::string::npos) {
-                        kl = entry_string.substr(i);
-                        num_priority_operator = i - 1;
-                    } else {
-                        kl = entry_string.substr(i + 1);
-                        num_priority_operator = i;
-                    }
-                    priority_operator = entry_string[num_priority_operator];
-                    break;
+            for (int i = entry_string.size() - 1; i > 0; --i) {
+                if (operators_4.find(entry_string[i]) != std::string::npos) {
+                    std::string kl = (entry_string[i] == '-' && operators_4.find(entry_string[i - 1]) != std::string::npos)
+                    ? entry_string.substr(i)
+                    : entry_string.substr(i + 1);
+                    char priority_operator = entry_string[i];
+
+                    entry_string = entry_string.substr(0, i);
+
+                    return computeResult(priority_operator, kl);
                 }
             }
-            // If the expression is a number, return the percentage value
-            if (num_priority_operator == 0) {
-                return std::to_string(std::stod(entry_string) / 100);
-            }
+            return removing_zeros(std::to_string(std::stod(entry_string) / 100));
         }
-
-        // Calculate kl_1 and result based on priority_operator
-        kl_1 = (entry_string[num_priority_operator - 1] == ')') ? this->calc(entry_string.substr(0, num_priority_operator)) : entry_string.substr(0, num_priority_operator);
-        double kl_val = std::stod(kl);
-        double kl_1_val = std::stod(kl_1);
-
-        if (priority_operator == '*' || priority_operator == '/') {
-            result = std::to_string(kl_val / 100);
-        } else {
-            result = std::to_string(kl_val * kl_1_val / 100);
-        }
-
-        // Construct and return the final expression
-        return kl_1 + priority_operator + result;
     }
 };
-
 
 
 
@@ -478,7 +500,7 @@ private:
         // Создаем окно
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_title(GTK_WINDOW(window), "Калькулятор");
-        gtk_widget_set_size_request(window, 100, 500);
+        gtk_widget_set_size_request(window, 150, 350);
 
         // Инициализируем генератор случайных чисел текущим временем
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -559,8 +581,8 @@ private:
             "4", "5", "6", "*",
             "1", "2", "3", "-",
             "0", ",", "=", "+",
-            "C", "CE", "00", "000",
-            "sin", "cos", "ctg", "tg"
+            "C", "CE", "00", "^",
+            "sin", "cos", "tan", "ctan"
         };
 
         for (int i = 0; i < 28; ++i) {
