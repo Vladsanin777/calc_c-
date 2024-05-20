@@ -497,6 +497,8 @@ private:
     }
 
     void window_s() {
+
+
         // Создаем окно
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
         gtk_window_set_title(GTK_WINDOW(window), "Калькулятор");
@@ -565,7 +567,7 @@ private:
 
         provider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(provider, "entry { background-color: rgba(0,0,0,0.1);}", -1, NULL);
-        gtk_style_context_add_provider(gtk_widget_get_style_context(entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+        gtk_style_context_add_provider(gtk_widget_get_style_context(entry), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         list_entry_container = new Type_list_entry_container{grid_1, grid_2, entry};
     }
@@ -574,7 +576,17 @@ private:
         GtkWidget *button = gtk_button_new_with_label(label);
         gtk_widget_set_hexpand(button, TRUE); // Кнопки растягиваются по горизонтали
         gtk_widget_set_vexpand(button, TRUE); // Кнопки растягиваются по вертикали
-        gtk_widget_set_opacity(button, 0.7); // Устанавливаем прозрачность кнопки
+        gtk_widget_set_name(button, "custom-button");
+
+        GtkCssProvider *provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider,
+                                        "button { background-color: rgba(0,0,0,0.1); }"
+                                        "button:hover { background-color: rgba(0,0,0,0.2); }"
+                                        "button:active { background-color: rgba(0,0,0,0.3); }",
+                                        -1, NULL);
+        gtk_style_context_add_provider(gtk_widget_get_style_context(button), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+
         return button;
     }
 
