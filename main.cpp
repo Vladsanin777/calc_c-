@@ -11,7 +11,6 @@
 #include <utility> // для std::pair
 #include <cmath>
 
-#include <cmath>
 #include <sstream>
 #include <map>
 
@@ -95,61 +94,6 @@ public:
 
 
 
-
-bool if_coma(const std::string& expression){
-    for (char i : expression){
-        if (i == ','){
-            return true;
-        }
-    }
-    return false;
-}
-
-std::string expression_trimming(const std::string& expression) {
-    std::string trimmed_expression = expression; // Создаем копию строки
-    if (if_coma(trimmed_expression)) {
-        for (int i = trimmed_expression.length() - 1; i >= 0; --i) {
-            if (trimmed_expression[i] == '0' or trimmed_expression[i] == ',') {
-                trimmed_expression.pop_back();
-            } else {
-                break;
-            }
-        }
-        return trimmed_expression;
-    }
-    return trimmed_expression;
-}
-
-
-
-void pprint_2(std::vector<std::string> nestedVector ){
-    // Выводим вложенный вектор в консоль
-    std::cout << "Nested Vector:_2" << std::endl;
-    for (std::string i  : nestedVector) {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
-}
-
-void pprint_1(std::vector<int> nestedVector ){
-    // Выводим вложенный вектор в консоль
-    std::cout << "Nested Vector:_1" << std::endl;
-    for (int i  : nestedVector) {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
-}
-
-void pprint(std::vector <std::vector<int>> nestedVector ){
-    // Выводим вложенный вектор в консоль
-    std::cout << "Nested Vector:" << std::endl;
-    for (const auto& innerVector : nestedVector) {
-        for (int element : innerVector) {
-            std::cout << element << " ";
-        }
-        std::cout << std::endl;
-    }
-}
 
 
 // Пользовательское исключение для деления на ноль
@@ -265,8 +209,11 @@ private:
 
 public:
     std::string removing_zeros(std::string expression){
-        for (int i = size(expression) - 1; expression[i] == '0' || expression[i] == ',';i--) expression.pop_back();
-        return expression.empty()? "0" : expression;
+        if (expression.find(',') != std::string::npos) {
+            for (int i = expression.length() - 1; expression[i] == '0'; --i) expression.pop_back();
+            if (expression[expression.length() - 1] = ',') expression.pop_back();
+        }
+        return expression == "" ? "0" : expression;
     }
 
     // Основной метод калькулятора
@@ -579,10 +526,25 @@ private:
         gtk_widget_set_name(button, "custom-button");
 
         GtkCssProvider *provider = gtk_css_provider_new();
-        gtk_css_provider_load_from_data(provider,
-                                        "button { background-color: rgba(0,0,0,0.1); }"
-                                        "button:hover { background-color: rgba(0,0,0,0.2); }"
-                                        "button:active { background-color: rgba(0,0,0,0.3); }",
+        gtk_css_provider_load_from_data(provider,R"(
+        button {
+            background: rgba(0,0,0,0.3);
+            border-radius: 0;
+            color: rgb(255,255,255);
+            border: 3px solid rgba(0,0,0,0);
+            text-shadow: none;
+            box-shadow: none; /* Убирает возможные тени */
+        }
+        button:hover {
+            background: rgba(0,0,0,0.1);
+        }
+        button:active {
+            background: rgba(0,0,0,0);
+        }
+        button:focus {
+            background: rgba(0,0,0,0.3); /* Убирает изменение цвета при фокусировке */
+        }
+        )",
                                         -1, NULL);
         gtk_style_context_add_provider(gtk_widget_get_style_context(button), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
 
